@@ -70,11 +70,18 @@ input,button,select,textarea{font-family:inherit}
 .nav-icon{font-size:16px;width:20px;text-align:center;flex-shrink:0}
 .nav-badge{background:var(--accent);color:#fff;font-size:10px;font-weight:700;padding:1px 7px;border-radius:20px;margin-left:auto;flex-shrink:0}
 .sidebar-footer{padding:12px 14px;border-top:1px solid var(--border);font-size:11px;color:var(--text3);flex-shrink:0}
+/* Thu gọn thanh bên trái trên desktop (>900px) — ẩn hẳn, main chiếm full width */
+@media (min-width:901px){
+  .sidebar{transition:transform var(--transition)}
+  .sidebar.collapsed{transform:translateX(-100%)}
+  .main{transition:margin var(--transition)}
+  .main.sidebar-collapsed{margin-left:0}
+}
 
 /* TOPBAR */
 .topbar{background:var(--bg2);border-bottom:1px solid var(--border);height:var(--topbar-h);padding:0 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;transition:background var(--transition),border-color var(--transition);gap:12px}
 .topbar-left{display:flex;align-items:center;gap:12px;min-width:0}
-.menu-btn{display:none;background:none;border:none;color:var(--text2);font-size:20px;cursor:pointer;padding:6px;border-radius:8px;flex-shrink:0;transition:background var(--transition)}
+.menu-btn{display:flex;align-items:center;justify-content:center;background:none;border:none;color:var(--text2);font-size:20px;cursor:pointer;padding:6px;border-radius:8px;flex-shrink:0;transition:background var(--transition)}
 .menu-btn:hover{background:var(--bg4);color:var(--text)}
 .page-title{font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .page-sub{font-size:11.5px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -306,13 +313,13 @@ input[type="date"]{color-scheme:dark}
   </div>
 </aside>
 
-<main class="main">
+<main class="main" id="main">
 
 <!-- PAGE: IMPORT -->
 <div id="page-import" class="page active">
   <div class="topbar">
     <div class="topbar-left">
-      <button class="menu-btn" onclick="openSidebar()">☰</button>
+      <button class="menu-btn" onclick="toggleSidebar()" title="Ẩn/hiện thanh bên">☰</button>
       <div><div class="page-title">📥 Nhập hóa đơn mới</div><div class="page-sub">Tải hóa đơn lên để tự động xử lý</div></div>
     </div>
     <div class="topbar-actions">
@@ -389,6 +396,7 @@ input[type="date"]{color-scheme:dark}
             <th class="hide-mobile">VAT%</th>
             <th class="hide-tablet">CK%</th>
             <th>Thành tiền</th>
+            <th title="Quy đổi đơn vị đóng gói (hộp → viên/chai/tuýp)">📦</th>
             <th></th>
           </tr></thead>
           <tbody id="items-body"></tbody>
@@ -408,7 +416,7 @@ input[type="date"]{color-scheme:dark}
 <div id="page-records" class="page">
   <div class="topbar">
     <div class="topbar-left">
-      <button class="menu-btn" onclick="openSidebar()">☰</button>
+      <button class="menu-btn" onclick="toggleSidebar()" title="Ẩn/hiện thanh bên">☰</button>
       <div><div class="page-title">📋 Lịch sử phiếu nhập</div><div class="page-sub">Tất cả phiếu nhập đã lưu</div></div>
     </div>
     <div class="topbar-actions">
@@ -426,7 +434,7 @@ input[type="date"]{color-scheme:dark}
 <div id="page-catalog" class="page">
   <div class="topbar">
     <div class="topbar-left">
-      <button class="menu-btn" onclick="openSidebar()">☰</button>
+      <button class="menu-btn" onclick="toggleSidebar()" title="Ẩn/hiện thanh bên">☰</button>
       <div><div class="page-title">🗂️ Danh mục thuốc quầy</div><div class="page-sub">Danh mục riêng của nhà thuốc</div></div>
     </div>
     <div class="topbar-actions">
@@ -452,7 +460,7 @@ input[type="date"]{color-scheme:dark}
 <div id="page-national" class="page">
   <div class="topbar">
     <div class="topbar-left">
-      <button class="menu-btn" onclick="openSidebar()">☰</button>
+      <button class="menu-btn" onclick="toggleSidebar()" title="Ẩn/hiện thanh bên">☰</button>
       <div><div class="page-title">🏥 Dược quốc gia</div><div class="page-sub">Danh mục để đối chiếu tên thuốc</div></div>
     </div>
     <div class="topbar-actions">
@@ -478,7 +486,7 @@ input[type="date"]{color-scheme:dark}
 <div id="page-suppliers" class="page">
   <div class="topbar">
     <div class="topbar-left">
-      <button class="menu-btn" onclick="openSidebar()">☰</button>
+      <button class="menu-btn" onclick="toggleSidebar()" title="Ẩn/hiện thanh bên">☰</button>
       <div><div class="page-title">🏢 Nhà cung cấp</div><div class="page-sub">Quản lý danh sách nhà cung cấp</div></div>
     </div>
     <div class="topbar-actions">
@@ -497,7 +505,7 @@ input[type="date"]{color-scheme:dark}
 <div id="page-backup" class="page">
   <div class="topbar">
     <div class="topbar-left">
-      <button class="menu-btn" onclick="openSidebar()">☰</button>
+      <button class="menu-btn" onclick="toggleSidebar()" title="Ẩn/hiện thanh bên">☰</button>
       <div><div class="page-title">💾 Sao lưu & Phục hồi</div><div class="page-sub">Quản lý dữ liệu cục bộ</div></div>
     </div>
     <div class="topbar-actions"><button class="theme-toggle" onclick="toggleTheme()" id="theme-btn6"><span class="toggle-icon" id="theme-icon6">🌙</span></button></div>
@@ -516,7 +524,7 @@ input[type="date"]{color-scheme:dark}
 <div id="page-settings" class="page">
   <div class="topbar">
     <div class="topbar-left">
-      <button class="menu-btn" onclick="openSidebar()">☰</button>
+      <button class="menu-btn" onclick="toggleSidebar()" title="Ẩn/hiện thanh bên">☰</button>
       <div><div class="page-title">⚙️ Cài đặt</div></div>
     </div>
     <div class="topbar-actions"><button class="theme-toggle" onclick="toggleTheme()" id="theme-btn7"><span class="toggle-icon" id="theme-icon7">🌙</span></button></div>
@@ -540,10 +548,12 @@ input[type="date"]{color-scheme:dark}
       </div>
     </div>
     <div class="card">
-      <div class="card-title">🤖 AI xử lý hóa đơn (Gemini 2.5 Flash)</div>
-      <div class="info-box">Nhập <strong>Google Gemini API Key</strong> để nhận diện hóa đơn từ ảnh & PDF bằng AI. Lấy key miễn phí tại <a href="https://aistudio.google.com/apikey" target="_blank" style="color:var(--accent2)">aistudio.google.com</a>.</div>
+      <div class="card-title">🤖 AI xử lý hóa đơn (Gemini 3.7 Flash)</div>
+      <div class="info-box">Nhập <strong>Google Gemini API Key</strong> để nhận diện hóa đơn từ ảnh & PDF bằng AI. Lấy key miễn phí tại <a href="https://aistudio.google.com/apikey" target="_blank" style="color:var(--accent2)">aistudio.google.com</a>. Lưu ý: key phải lấy từ <strong>Google AI Studio</strong> (không phải key Vertex AI/Cloud Console). Nếu không có key hoặc AI đang quá tải, hệ thống sẽ tự động chuyển sang <strong>OCR cục bộ (Tesseract.js)</strong> chạy ngay trong trình duyệt, không cần mạng ổn định hay API.</div>
       <div class="form-group"><label class="form-label">Gemini API Key</label><input class="form-input" id="s-apikey" type="password" placeholder="AIza..."></div>
       <button class="btn btn-primary" onclick="saveAPIKey()">💾 Lưu API Key</button>
+      <button class="btn btn-outline" onclick="testAPIKey()" id="btn-test-key">🔍 Kiểm tra Key</button>
+      <div id="apikey-test-result" style="margin-top:10px;font-size:13px"></div>
     </div>
   </div>
 </div>
@@ -602,6 +612,32 @@ input[type="date"]{color-scheme:dark}
   </div>
 </div>
 
+<!-- MODAL: Quy đổi đơn vị đóng gói -->
+<div class="modal-overlay" id="modal-pack">
+  <div class="modal" style="max-width:460px">
+    <div class="modal-header"><div class="modal-title">📦 Quy đổi đơn vị đóng gói</div><button class="btn btn-ghost btn-sm" onclick="closeModal('modal-pack')">✕</button></div>
+    <div class="modal-body">
+      <div class="info-box" style="margin-bottom:14px">💡 Hóa đơn ghi theo <strong>đơn vị lớn</strong> (hộp/thùng) nhưng nhập kho theo <strong>đơn vị bán lẻ</strong> (viên/chai/tuýp). Nhập quy cách đóng gói để tự tính lại số lượng, đơn giá nhập và giá bán (+15%).</div>
+      <div style="font-size:13px;font-weight:700;margin-bottom:6px" id="pack-item-name">—</div>
+      <div id="pack-guess-hint" style="font-size:12px;color:var(--orange2);font-weight:600;margin-bottom:10px"></div>
+      <div class="form-group"><label class="form-label">Đơn vị lớn trên hóa đơn (VD: Hộp)</label><input class="form-input" id="pack-unit-big" placeholder="Hộp"></div>
+      <div class="form-group"><label class="form-label">Đơn vị nhỏ nhập kho (VD: Viên, Chai, Tuýp)</label><input class="form-input" id="pack-unit-small" placeholder="Viên"></div>
+      <div class="form-group"><label class="form-label">Quy cách đóng gói — 1 <span id="pack-unit-big-lbl">đơn vị lớn</span> = bao nhiêu <span id="pack-unit-small-lbl">đơn vị nhỏ</span>? *</label><input class="form-input" id="pack-size" type="number" min="1" placeholder="VD: 100"></div>
+      <hr style="border:none;border-top:1px solid var(--border);margin:14px 0">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="form-group"><label class="form-label">SL trên hóa đơn (đơn vị lớn)</label><input class="form-input td-mono" id="pack-qty-big" type="number" min="0" step="0.01"></div>
+        <div class="form-group"><label class="form-label">Đơn giá trên hóa đơn (đơn vị lớn)</label><input class="form-input td-mono" id="pack-price-big" type="number" min="0" step="0.01"></div>
+      </div>
+      <div id="pack-preview" style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:12px;font-size:13px;line-height:1.9;margin-top:6px"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-pack')">Hủy</button>
+      <button class="btn btn-primary" onclick="applyPackConvert()">✅ Áp dụng</button>
+    </div>
+  </div>
+</div>
+
+
 <div class="toast-container" id="toasts"></div>
 
 <script>
@@ -627,12 +663,29 @@ applyTheme(currentTheme);
 
 // ======================== DATA ========================
 const DB={get:(k,d)=>{try{return JSON.parse(localStorage.getItem('pi_'+k))??d}catch{return d}},set:(k,v)=>localStorage.setItem('pi_'+k,JSON.stringify(v))};
-let catalog=DB.get('catalog',[]),national=DB.get('national',[]),suppliers=DB.get('suppliers',[]),records=DB.get('records',[]),settings=DB.get('settings',{name:'',shopcode:'',keeper:'',supplier:''}),apiKey=DB.get('apikey','');
+let catalog=DB.get('catalog',[]),national=DB.get('national',[]),suppliers=DB.get('suppliers',[]),records=DB.get('records',[]),settings=DB.get('settings',{name:'',shopcode:'',keeper:'',supplier:''}),apiKey=DB.get('apikey',''),packmap=DB.get('packmap',{});
 let currentItems=[],currentRecordIdx=-1,editingRecordIdx=-1;
 
 // ======================== SIDEBAR ========================
 function openSidebar(){document.getElementById('sidebar').classList.add('open');const ov=document.getElementById('sidebar-overlay');ov.style.display='block';ov.style.pointerEvents='all';requestAnimationFrame(()=>ov.classList.add('show'));}
 function closeSidebar(){document.getElementById('sidebar').classList.remove('open');const ov=document.getElementById('sidebar-overlay');ov.classList.remove('show');setTimeout(()=>{ov.style.display='none';ov.style.pointerEvents='none';},250);}
+// Nút ☰ trên topbar: màn hình hẹp (≤900px) -> mở overlay trượt như cũ;
+// màn hình rộng (>900px) -> ẩn/hiện hẳn thanh bên trái, main chiếm full width, nhớ trạng thái qua localStorage
+function toggleSidebar(){
+  if(window.innerWidth<=900){openSidebar();return;}
+  const sb=document.getElementById('sidebar'),main=document.getElementById('main');
+  const collapsed=sb.classList.toggle('collapsed');
+  main.classList.toggle('sidebar-collapsed',collapsed);
+  DB.set('sidebarCollapsed',collapsed);
+}
+// Áp trạng thái đã lưu khi tải trang (chỉ áp cho desktop; mobile luôn khởi động ở trạng thái đóng overlay)
+function applySavedSidebarState(){
+  if(window.innerWidth<=900)return;
+  if(DB.get('sidebarCollapsed',false)){
+    document.getElementById('sidebar').classList.add('collapsed');
+    document.getElementById('main').classList.add('sidebar-collapsed');
+  }
+}
 
 // ======================== NAVIGATION ========================
 function showPage(p){
@@ -673,20 +726,47 @@ async function handleFileUpload(file){
 }
 
 async function callGeminiAI(parts){
-  const key=apiKey||DB.get('apikey','');
+  const key=cleanApiKey(apiKey||DB.get('apikey',''));
   if(!key)throw new Error('NO_KEY');
-  const resp=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`,{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({contents:[{parts}]})
-  });
-  const data=await resp.json();
-  if(data.error)throw new Error(data.error.message);
-  return data.candidates?.[0]?.content?.parts?.map(p=>p.text||'').join('')||'';
+  const models=['gemini-3.7-flash','gemini-2.5-flash']; // model chính + model dự phòng khi quá tải
+  let lastErr=null;
+  for(let m=0;m<models.length;m++){
+    const model=models[m];
+    const maxRetry=2; // số lần thử lại trên cùng 1 model khi bị quá tải/lỗi tạm thời
+    for(let attempt=0;attempt<=maxRetry;attempt++){
+      try{
+        const resp=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({contents:[{parts}]})
+        });
+        const data=await resp.json();
+        if(data.error){
+          const msg=data.error.message||'';
+          const isOverloaded=/high demand|overloaded|503|UNAVAILABLE/i.test(msg)||resp.status===503;
+          lastErr=new Error(msg);
+          if(isOverloaded){
+            if(attempt<maxRetry){await sleep(1200*(attempt+1));continue;} // đợi rồi thử lại cùng model
+            break; // hết lượt thử với model này -> chuyển sang model dự phòng
+          }
+          throw lastErr; // lỗi khác (key sai, quota hết, ...) -> báo ngay, không thử tiếp
+        }
+        return data.candidates?.[0]?.content?.parts?.map(p=>p.text||'').join('')||'';
+      }catch(e){
+        if(e.message==='NO_KEY')throw e;
+        lastErr=e;
+        const isOverloaded=/high demand|overloaded|503|UNAVAILABLE|Failed to fetch/i.test(e.message||'');
+        if(isOverloaded&&attempt<maxRetry){await sleep(1200*(attempt+1));continue;}
+        break;
+      }
+    }
+  }
+  throw lastErr||new Error('Không thể kết nối tới Gemini AI');
 }
+function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
 
 async function parsePdfInvoice(file){
-  const key=apiKey||DB.get('apikey','');
+  const key=cleanApiKey(apiKey||DB.get('apikey',''));
   if(!key){
     toast('Không có Gemini API Key — thử trích xuất văn bản PDF...','info');
     await parsePdfText(file);
@@ -694,7 +774,7 @@ async function parsePdfInvoice(file){
   }
   setProgress(20,'Đang đọc file PDF...');
   const b64=await fileToBase64(file);
-  setProgress(40,'Gửi PDF đến Gemini 2.5 Flash...');
+  setProgress(40,'Đang gửi PDF đến Gemini AI...');
   const catalogContext=catalog.slice(0,50).map(d=>`${d.code}: ${d.name} (${d.unit||''}, giá bán: ${d.price||0}, VAT: ${d.vat||0}%)`).join('\n');
   const prompt=`Bạn là trợ lý nhận dạng hóa đơn dược phẩm. Trích xuất thông tin hóa đơn và toàn bộ sản phẩm từ hóa đơn PDF này.\n${catalogContext?`\nDanh mục thuốc của quầy:\n${catalogContext}`:''}\nTrả về JSON hợp lệ (không có markdown backticks):\n{"invoiceNumber":"Số hóa đơn. Nếu có cả Ký hiệu và Số thì ghép dạng KyHieu-So, ví dụ 1C25TAA-123","invoiceDate":"Ngày hóa đơn định dạng DD/MM/YYYY","items":[{"name":"Tên thuốc","lot":"Số lô","expiry":"DD/MM/YYYY","unit":"Đơn vị","qty":0,"price":0,"sellprice":0,"vat":0,"discount":0,"code":"mã hàng nếu biết"}]}`;
   try{
@@ -743,12 +823,45 @@ async function parsePdfText(file){
       allText+=lines.join(' ')+'\n';
     }
     setProgress(60,'Phân tích văn bản...');
+    let items=parsePlainTextInvoice(allText);
+    let invoiceInfo=extractInvoiceInfo(allText);
+    // PDF không có lớp text (dạng scan/ảnh chụp) hoặc không trích được sản phẩm -> chuyển sang OCR cục bộ trên ảnh render từ PDF
+    if(!items.length){
+      toast('PDF không có văn bản trích xuất được (có thể là bản scan) — chuyển sang OCR cục bộ...','info');
+      await parsePdfWithOcr(pdf);
+      return;
+    }
+    setProgress(100,'Xong!');
+    setTimeout(()=>{showProgress(false);initImportView(items,invoiceInfo);},300);
+  }catch(e){showProgress(false);toast('Lỗi đọc PDF: '+e.message,'error');}
+}
+// Render các trang PDF thành ảnh rồi chạy OCR (Tesseract.js) — dùng khi PDF là bản scan không có text
+async function parsePdfWithOcr(pdf){
+  try{
+    setProgress(35,'Tải công cụ OCR (Tesseract.js)...');
+    await ensureTesseractLoaded();
+    let allText='';
+    const maxPages=Math.min(pdf.numPages,5); // giới hạn 5 trang đầu để tránh chạy quá lâu trên máy yếu
+    for(let p=1;p<=maxPages;p++){
+      setProgress(35+Math.round((p-1)/maxPages*20),`Đang dựng ảnh trang ${p}/${maxPages}...`);
+      const page=await pdf.getPage(p);
+      const viewport=page.getViewport({scale:2});
+      const canvas=document.createElement('canvas');
+      canvas.width=viewport.width;canvas.height=viewport.height;
+      const ctx=canvas.getContext('2d');
+      await page.render({canvasContext:ctx,viewport}).promise;
+      setProgress(55+Math.round((p-1)/maxPages*35),`OCR trang ${p}/${maxPages}...`);
+      const text=await runOcrOnImage(canvas.toDataURL('image/png'));
+      allText+=text+'\n';
+    }
+    setProgress(92,'Phân tích văn bản...');
     const items=parsePlainTextInvoice(allText);
     const invoiceInfo=extractInvoiceInfo(allText);
     setProgress(100,'Xong!');
     setTimeout(()=>{showProgress(false);initImportView(items,invoiceInfo);},300);
-    if(!items.length)toast('Không trích xuất được sản phẩm từ PDF. Thử nhập API Key để dùng AI.','error');
-  }catch(e){showProgress(false);toast('Lỗi đọc PDF: '+e.message,'error');}
+    if(!items.length)toast('OCR không nhận diện được sản phẩm rõ ràng. Vui lòng kiểm tra và nhập bổ sung thủ công.','error');
+    else toast('Đã đọc bằng OCR cục bộ (dự phòng, không cần API). Vui lòng kiểm tra lại kết quả.','info');
+  }catch(e){showProgress(false);toast('Lỗi OCR PDF: '+e.message,'error');}
 }
 
 // Dò tìm ký hiệu + số hóa đơn (gộp bằng dấu gạch) & ngày hóa đơn trong văn bản trích xuất từ PDF (fallback không dùng AI)
@@ -838,10 +951,61 @@ async function parseExcelInvoice(file){
   setProgress(90,'Hoàn tất...');
   setTimeout(()=>{showProgress(false);initImportView(items);},300);
 }
+// ======================== OCR DỰ PHÒNG (Tesseract.js — chạy cục bộ, không cần API/mạng ổn định) ========================
+// Dùng khi Gemini AI lỗi/quá tải hoặc không có API Key. Chạy hoàn toàn trong trình duyệt bằng WebAssembly.
+let tesseractWorker=null;
+async function ensureTesseractLoaded(){
+  if(window.Tesseract)return;
+  await new Promise((res,rej)=>{
+    const s=document.createElement('script');
+    s.src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+    s.onload=res; s.onerror=rej;
+    document.head.appendChild(s);
+  });
+}
+async function getTesseractWorker(){
+  await ensureTesseractLoaded();
+  if(!tesseractWorker){
+    tesseractWorker=await window.Tesseract.createWorker('vie+eng',1,{
+      logger:m=>{
+        if(m.status==='recognizing text'&&typeof m.progress==='number'){
+          setProgress(60+Math.round(m.progress*30),'OCR đang nhận diện chữ... '+Math.round(m.progress*100)+'%');
+        }
+      }
+    });
+  }
+  return tesseractWorker;
+}
+async function runOcrOnImage(source){
+  const worker=await getTesseractWorker();
+  const {data}=await worker.recognize(source);
+  return data?.text||'';
+}
+// Dùng OCR để đọc 1 file ảnh hóa đơn, phân tích và mở màn hình nhập liệu
+async function parseImageWithOcr(file){
+  setProgress(30,'Tải công cụ OCR (Tesseract.js)...');
+  try{
+    const dataUrl=await fileToBase64(file);
+    setProgress(50,'Đang nhận diện chữ trong ảnh...');
+    const text=await runOcrOnImage(dataUrl);
+    setProgress(92,'Phân tích văn bản...');
+    const items=parsePlainTextInvoice(text);
+    const invoiceInfo=extractInvoiceInfo(text);
+    setProgress(100,'Xong!');
+    setTimeout(()=>{showProgress(false);initImportView(items,invoiceInfo);},300);
+    if(!items.length)toast('OCR không nhận diện được sản phẩm rõ ràng. Vui lòng kiểm tra và nhập bổ sung thủ công.','error');
+    else toast('Đã đọc bằng OCR cục bộ (dự phòng, không cần API). Vui lòng kiểm tra lại kết quả.','info');
+  }catch(e){showProgress(false);toast('Lỗi OCR: '+e.message,'error');}
+}
+
 async function parseImageInvoice(file){
-  const key=apiKey||DB.get('apikey','');
-  if(!key){toast('Vui lòng nhập Gemini API Key trong Cài đặt để xử lý ảnh','error');showProgress(false);return;}
-  setProgress(20,'Đang mã hóa ảnh...');const b64=await fileToBase64(file);setProgress(40,'Gửi ảnh đến Gemini 2.5 Flash...');
+  const key=cleanApiKey(apiKey||DB.get('apikey',''));
+  if(!key){
+    toast('Không có Gemini API Key — dùng OCR cục bộ (Tesseract.js) để đọc ảnh...','info');
+    await parseImageWithOcr(file);
+    return;
+  }
+  setProgress(20,'Đang mã hóa ảnh...');const b64=await fileToBase64(file);setProgress(40,'Đang gửi ảnh đến Gemini AI...');
   const catalogContext=catalog.slice(0,50).map(d=>`${d.code}: ${d.name} (${d.unit||''}, giá bán: ${d.price||0}, VAT: ${d.vat||0}%)`).join('\n');
   const prompt=`Bạn là trợ lý nhận dạng hóa đơn dược phẩm. Trích xuất thông tin hóa đơn và toàn bộ sản phẩm.\n${catalogContext?`\nDanh mục:\n${catalogContext}`:''}\nTrả về JSON hợp lệ (không markdown):\n{"invoiceNumber":"Số hóa đơn. Nếu có cả Ký hiệu và Số thì ghép dạng KyHieu-So, ví dụ 1C25TAA-123","invoiceDate":"Ngày hóa đơn định dạng DD/MM/YYYY","items":[{"name":"","lot":"","expiry":"DD/MM/YYYY","unit":"","qty":0,"price":0,"sellprice":0,"vat":0,"discount":0,"code":""}]}`;
   try{
@@ -851,7 +1015,15 @@ async function parseImageInvoice(file){
     const parsed=JSON.parse(clean);
     const items=(parsed.items||[]).map(it=>({...it,matched:catalog.some(d=>d.code===it.code&&it.code)}));
     setProgress(100,'Hoàn tất!');setTimeout(()=>{showProgress(false);initImportView(items,{invoiceNumber:parsed.invoiceNumber,invoiceDate:parsed.invoiceDate});},300);
-  }catch(e){showProgress(false);toast('Lỗi AI: '+e.message,'error');}
+  }catch(e){
+    showProgress(false);
+    if(/high demand|overloaded|503|UNAVAILABLE/i.test(e.message||'')){
+      toast('Gemini AI đang quá tải. Chuyển sang OCR cục bộ (dự phòng)...','info');
+    }else{
+      toast('AI lỗi: '+e.message+'. Chuyển sang OCR cục bộ (dự phòng)...','info');
+    }
+    await parseImageWithOcr(file);
+  }
 }
 function fileToBase64(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(file);});}
 function setProgress(pct,msg){document.getElementById('prog-fill').style.width=pct+'%';document.getElementById('prog-text').textContent=msg;}
@@ -945,7 +1117,7 @@ function rematchAll(){
 }
 
 async function aiMatchAll(){
-  const key=apiKey||DB.get('apikey','');
+  const key=cleanApiKey(apiKey||DB.get('apikey',''));
   if(!key){toast('Vui lòng nhập Gemini API Key trong Cài đặt','error');return;}
   const unmatched=currentItems.filter(it=>!it.code);
   if(!unmatched.length){toast('Tất cả sản phẩm đã có mã hàng!','success');return;}
@@ -1006,8 +1178,34 @@ Trả về JSON (không markdown):
   }
 }
 
+// Tự động áp dụng quy đổi đóng gói cho các dòng có mã đã từng lưu quy cách trong packmap,
+// không cần mở modal — chỉ áp dụng khi số lượng/đơn giá gốc hợp lệ và dòng chưa được quy đổi.
+// Trả về số dòng đã tự động quy đổi được.
+function autoApplyKnownPacks(items){
+  let count=0;
+  items.forEach(it=>{
+    if(it.packConverted||!it.code)return;
+    const p=packmap[it.code];
+    if(!p||!p.size||p.size<=0)return;
+    const qtyBig=parseFloat(it.qty)||0;
+    const priceBig=parseFloat(it.price)||0;
+    if(qtyBig<=0)return; // không đủ số lượng gốc để tính lại thì bỏ qua, để người dùng tự xử lý qua modal
+    it.qty=qtyBig*p.size;
+    it.price=Math.round((priceBig/p.size)*100)/100;
+    it.sellprice=roundTo100(it.price*1.15);
+    it.unit=p.unitSmall||it.unit;
+    it.packConverted=true;
+    it.packSize=p.size;
+    it.packOrigUnit=p.unitBig||'Hộp';
+    it.packOrigQty=qtyBig;
+    it.packOrigPrice=priceBig;
+    count++;
+  });
+  return count;
+}
 function initImportView(items,invoiceInfo){
   currentItems=items;
+  const autoPacked=autoApplyKnownPacks(currentItems);
   if(editingRecordIdx>=0){editingRecordIdx=-1;setEditModeUI(false);}
   document.getElementById('invoice-section').style.display='';
   document.getElementById('items-section').style.display='';
@@ -1029,7 +1227,8 @@ function initImportView(items,invoiceInfo){
   }
   renderItemsTable();
   const infoMsg=(invoiceInfo&&(invoiceInfo.invoiceNumber||invoiceInfo.invoiceDate))?' (đã tự nhận thông tin hóa đơn)':'';
-  toast('Đọc xong! '+items.length+' sản phẩm'+infoMsg,'success');
+  const packMsg=autoPacked>0?(' — đã tự quy đổi đóng gói cho '+autoPacked+' dòng theo mã đã biết'):'';
+  toast('Đọc xong! '+items.length+' sản phẩm'+infoMsg+packMsg,'success');
 }
 // Chuyển dd/mm/yyyy -> yyyy-mm-dd để gán vào input type="date"
 function vnDateToISO(s){
@@ -1065,6 +1264,7 @@ function renderItemsTable(){
       <td class="hide-mobile"><input class="form-input" style="width:52px;font-size:12px;padding:6px 8px;text-align:right" type="number" value="${it.vat||0}" onchange="updateItem(${i},'vat',this.value)" min="0"></td>
       <td class="hide-tablet"><input class="form-input" style="width:52px;font-size:12px;padding:6px 8px;text-align:right" type="number" value="${it.discount||0}" onchange="updateItem(${i},'discount',this.value)" min="0"></td>
       <td class="td-mono" style="text-align:right;color:var(--accent2);font-weight:700;white-space:nowrap" id="amt-${i}">${fmtNum(amt)}</td>
+      <td>${it.packConverted?`<span class="btn btn-outline btn-xs" style="padding:4px 7px;font-size:11px" onclick="openPackConvert(${i})" title="Đã quy đổi: ${it.packOrigUnit||''} → ${it.unit||''} (x${it.packSize||1})">✅📦</span>`:`<span class="btn btn-outline btn-xs" style="padding:4px 7px;font-size:11px" onclick="openPackConvert(${i})" title="Quy đổi đơn vị đóng gói">📦</span>`}</td>
       <td><span class="delete-row" onclick="removeRow(${i})">✕</span></td>`;
     tbody.appendChild(tr);
   });
@@ -1083,6 +1283,122 @@ function updateItem(i,field,val){
 }
 function addRow(){currentItems.push({name:'',code:'',unit:'',lot:'',expiry:'',qty:0,price:0,sellprice:0,vat:5,discount:0,matched:false,matchSrc:''});renderItemsTable();}
 function removeRow(i){currentItems.splice(i,1);renderItemsTable();}
+
+// ======================== QUY ĐỔI ĐƠN VỊ ĐÓNG GÓI (hộp -> viên/chai/tuýp) ========================
+// Ánh xạ ký hiệu viết tắt thường gặp trên tên thuốc sang tên đơn vị đầy đủ tiếng Việt (dùng cho đơn vị LỚN hoặc đơn vị trung gian)
+const UNIT_ABBR={h:'Hộp',t:'Thùng',v:'Vỉ',c:'Chai',tuyp:'Tuýp',tp:'Tuýp',o:'Ống',g:'Gói',l:'Lọ',vi:'Viên'};
+// Ánh xạ riêng cho ký hiệu ở vị trí ĐƠN VỊ BÁN LẺ CUỐI CÙNG trong chuỗi 3 cấp (VD: 200V trong T/56C/200V) — ở vị trí này "V" luôn là Viên, không phải Vỉ
+const RETAIL_UNIT_ABBR={v:'Viên',vi:'Viên',c:'Chai',tuyp:'Tuýp',tp:'Tuýp',o:'Ống',g:'Gói',l:'Lọ'};
+function expandUnitAbbr(code,isRetail){
+  if(!code)return code;
+  const k=code.trim().toLowerCase();
+  const table=isRetail?RETAIL_UNIT_ABBR:UNIT_ABBR;
+  return table[k]||code.trim().toUpperCase();
+}
+// Dò quy cách đóng gói từ tên thuốc, ví dụ:
+//  "EUCAFLU H/100--AT"            -> {unitBig:'Hộp', unitSmall:'', size:100} (không rõ đơn vị nhỏ, để trống)
+//  "Travicol 650mg (T/56C/200V)"  -> {unitBig:'Thùng', unitSmall:'Viên', size:56*200} (nhân đủ các cấp liền nhau, đơn vị nhỏ = chữ cuối chuỗi)
+//  "Giải độc gan TVP v/10, H/50 - TV" -> {unitBig:'Hộp', unitSmall:'Viên', size:50} (chỉ lấy quy cách từ cụm cuối, cụm trước chỉ là ghi chú đóng vỉ nên bỏ qua, mặc định đơn vị nhỏ là Viên)
+function parsePackFromName(name){
+  if(!name)return null;
+  const str=String(name);
+  // Dạng nhiều cấp liền nhau không dấu phẩy, ví dụ T/56C/200V -> nhân các cấp lại, đơn vị nhỏ = chữ cuối cùng (đơn vị bán lẻ thật)
+  const chainM=str.match(/\b([A-Za-zÀ-ỹ]{1,4})\s*\/\s*(\d+)\s*([A-Za-zÀ-ỹ]{1,4})\s*\/\s*(\d+)\s*([A-Za-zÀ-ỹ]{1,4})\b/);
+  if(chainM){
+    const size=(parseFloat(chainM[2])||1)*(parseFloat(chainM[4])||1);
+    return{unitBig:expandUnitAbbr(chainM[1]),unitSmall:expandUnitAbbr(chainM[5],true),size};
+  }
+  // Dạng nhiều cụm phân tách bằng dấu phẩy, ví dụ "v/10, H/50" -> chỉ lấy quy cách từ cụm CUỐI CÙNG,
+  // các cụm trước (vỉ, ống...) chỉ là ghi chú cách đóng gói nội bộ, không phải đơn vị nhập kho -> mặc định đơn vị nhỏ là Viên
+  const groups=[...str.matchAll(/\b([A-Za-zÀ-ỹ]{1,4})\s*\/\s*(\d+)\b/g)];
+  if(groups.length>=2){
+    const last=groups[groups.length-1];
+    return{unitBig:expandUnitAbbr(last[1]),unitSmall:'Viên',size:parseFloat(last[2])||1};
+  }
+  // Dạng đơn giản 1 cặp, ví dụ "H/100" -> không đủ thông tin để biết đơn vị nhỏ, để trống cho người dùng tự nhập
+  if(groups.length===1){
+    return{unitBig:expandUnitAbbr(groups[0][1]),unitSmall:'',size:parseFloat(groups[0][2])||1};
+  }
+  return null;
+}
+let packConvertIdx=-1;
+// Dò quy cách đóng gói theo mã thuốc đã lưu từ những lần quy đổi trước (ưu tiên cao nhất — chính xác tuyệt đối vì gắn với đúng mã hàng)
+function guessPackFromCode(code){
+  if(!code)return null;
+  const p=packmap[code];
+  if(!p||!p.size)return null;
+  return {unitBig:p.unitBig||'Hộp',unitSmall:p.unitSmall||'',size:p.size,fromCode:true};
+}
+function openPackConvert(i){
+  packConvertIdx=i;const it=currentItems[i];
+  document.getElementById('pack-item-name').textContent=it.name||'(Chưa đặt tên)';
+  // Ưu tiên dò theo mã thuốc (đáng tin cậy nhất vì đúng mã hàng), nếu không có thì mới dò theo tên
+  const guess=(!it.packConverted)?(guessPackFromCode(it.code)||parsePackFromName(it.name)):null;
+  document.getElementById('pack-unit-big').value=it.packOrigUnit||(guess?guess.unitBig:'Hộp');
+  document.getElementById('pack-unit-small').value=it.packConverted?(it.unit||''):((guess&&guess.unitSmall)?guess.unitSmall:(it.unit||''));
+  document.getElementById('pack-size').value=it.packSize||(guess?guess.size:'');
+  document.getElementById('pack-qty-big').value=it.packConverted?(it.packOrigQty!=null?it.packOrigQty:''):(it.qty||'');
+  document.getElementById('pack-price-big').value=it.packConverted?(it.packOrigPrice!=null?it.packOrigPrice:''):(it.price||'');
+  ['pack-size','pack-qty-big','pack-price-big','pack-unit-big','pack-unit-small'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.oninput=updatePackPreview;
+  });
+  if(guess){
+    const hint=document.getElementById('pack-guess-hint');
+    if(hint)hint.textContent=guess.fromCode
+      ?`🔎 Tự nhận diện theo mã thuốc "${it.code}" (đã lưu từ lần nhập trước): ${guess.unitBig} = ${fmtNum(guess.size)} ${guess.unitSmall||'đơn vị nhỏ'}. Vui lòng kiểm tra lại trước khi áp dụng.`
+      :`🔎 Tự nhận diện từ tên thuốc: ${guess.unitBig} = ${fmtNum(guess.size)} ${guess.unitSmall||'đơn vị nhỏ'}. Vui lòng kiểm tra lại trước khi áp dụng.`;
+  }else{
+    const hint=document.getElementById('pack-guess-hint');
+    if(hint)hint.textContent='';
+  }
+  updatePackPreview();
+  openModal('modal-pack');
+}
+function updatePackPreview(){
+  const size=parseFloat(document.getElementById('pack-size').value)||0;
+  const qtyBig=parseFloat(document.getElementById('pack-qty-big').value)||0;
+  const priceBig=parseFloat(document.getElementById('pack-price-big').value)||0;
+  const unitBig=document.getElementById('pack-unit-big').value||'đơn vị lớn';
+  const unitSmall=document.getElementById('pack-unit-small').value||'đơn vị nhỏ';
+  document.getElementById('pack-unit-big-lbl').textContent=unitBig;
+  document.getElementById('pack-unit-small-lbl').textContent=unitSmall;
+  const box=document.getElementById('pack-preview');
+  if(size<=0){box.innerHTML='<span style="color:var(--text3)">Nhập quy cách đóng gói để xem kết quả tính toán.</span>';return;}
+  const qtySmall=qtyBig*size;
+  const priceSmall=priceBig/size;
+  const sellPrice=roundTo100(priceSmall*1.15);
+  box.innerHTML=`Số lượng nhập kho: <strong>${fmtNum(qtySmall)} ${esc(unitSmall)}</strong><br>`
+    +`Đơn giá nhập (đã quy đổi): <strong>${fmtNum(priceSmall)}</strong> đ/${esc(unitSmall)}<br>`
+    +`Giá bán (+15%, làm tròn trăm): <strong style="color:var(--accent2)">${fmtNum(sellPrice)}</strong> đ/${esc(unitSmall)}`;
+}
+function roundTo100(n){return Math.round(n/100)*100;}
+function applyPackConvert(){
+  if(packConvertIdx<0)return;
+  const size=parseFloat(document.getElementById('pack-size').value)||0;
+  if(size<=0){toast('Vui lòng nhập quy cách đóng gói hợp lệ (lớn hơn 0)','error');return;}
+  const qtyBig=parseFloat(document.getElementById('pack-qty-big').value)||0;
+  const priceBig=parseFloat(document.getElementById('pack-price-big').value)||0;
+  const unitBig=document.getElementById('pack-unit-big').value.trim()||'Hộp';
+  const unitSmall=document.getElementById('pack-unit-small').value.trim()||'Viên';
+  const it=currentItems[packConvertIdx];
+  it.qty=qtyBig*size;
+  it.price=Math.round((priceBig/size)*100)/100;
+  it.sellprice=roundTo100(it.price*1.15);
+  it.unit=unitSmall;
+  it.packConverted=true;
+  it.packSize=size;
+  it.packOrigUnit=unitBig;
+  it.packOrigQty=qtyBig;
+  it.packOrigPrice=priceBig;
+  // Ghi nhớ quy cách đóng gói theo mã thuốc để tự dò cho các lần nhập sau
+  if(it.code){
+    packmap[it.code]={unitBig,unitSmall,size};
+    DB.set('packmap',packmap);
+  }
+  renderItemsTable();
+  closeModal('modal-pack');
+  toast('Đã quy đổi sang '+unitSmall+' và tính lại giá bán!'+(it.code?' (Đã ghi nhớ quy cách cho mã '+it.code+')':''),'success');
+}
 function clearImport(){currentItems=[];document.getElementById('invoice-section').style.display='none';document.getElementById('items-section').style.display='none';document.getElementById('btn-save').disabled=true;document.getElementById('btn-export').disabled=true;document.getElementById('file-input').value='';showProgress(false);if(editingRecordIdx>=0){editingRecordIdx=-1;setEditModeUI(false);}}
 function showDrugAC(idx,input){
   const q=normalize(input.value);const ac=document.getElementById('ac-'+idx);
@@ -1370,20 +1686,60 @@ function deleteSupplier(i){if(!confirm('Xóa nhà cung cấp này?'))return;supp
 function filterSupplierAC(q){const ac=document.getElementById('supplier-ac');const nq=normalize(q);if(!nq){ac.style.display='none';return;}const hits=suppliers.filter(s=>normalize(s.name).includes(nq)||normalize(s.code).includes(nq)).slice(0,6);if(!hits.length){ac.style.display='none';return;}ac.innerHTML=hits.map(s=>`<div class="autocomplete-item" onclick="selectSupAC('${esc(s.code)}')"><span class="drug-code">${s.code}</span>${s.name}</div>`).join('');ac.style.display='';setTimeout(()=>document.addEventListener('click',function h(e){if(!ac.contains(e.target)){ac.style.display='none';document.removeEventListener('click',h);}},100));}
 function selectSupAC(code){document.getElementById('inp-supplier').value=code;document.getElementById('supplier-ac').style.display='none';}
 
-function backupData(){const data={catalog,national,suppliers,records,settings,exportedAt:new Date().toISOString()};const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`pharmimport_backup_${new Date().toISOString().split('T')[0]}.json`;a.click();toast('Đã xuất file sao lưu!','success');}
-function restoreData(input){const file=input.files[0];if(!file)return;const r=new FileReader();r.onload=e=>{try{const data=JSON.parse(e.target.result);if(!confirm(`Phục hồi dữ liệu từ ${data.exportedAt||'file này'}?\nSẽ ghi đè toàn bộ dữ liệu hiện tại!`))return;catalog=data.catalog||[];national=data.national||[];suppliers=data.suppliers||[];records=data.records||[];settings=data.settings||{};DB.set('catalog',catalog);DB.set('national',national);DB.set('suppliers',suppliers);DB.set('records',records);DB.set('settings',settings);updateRecordCount();renderStorageInfo();toast('Phục hồi thành công!','success');}catch(err){toast('File sao lưu không hợp lệ','error');}};r.readAsText(file);input.value='';}
-function clearAllData(){if(!prompt('Nhập "XOA" để xác nhận xóa toàn bộ dữ liệu:')?.includes('XOA'))return;catalog=[];national=[];suppliers=[];records=[];['catalog','national','suppliers','records'].forEach(k=>DB.set(k,[]));updateRecordCount();renderStorageInfo();toast('Đã xóa toàn bộ dữ liệu','info');}
+function backupData(){const data={catalog,national,suppliers,records,settings,packmap,exportedAt:new Date().toISOString()};const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`pharmimport_backup_${new Date().toISOString().split('T')[0]}.json`;a.click();toast('Đã xuất file sao lưu!','success');}
+function restoreData(input){const file=input.files[0];if(!file)return;const r=new FileReader();r.onload=e=>{try{const data=JSON.parse(e.target.result);if(!confirm(`Phục hồi dữ liệu từ ${data.exportedAt||'file này'}?\nSẽ ghi đè toàn bộ dữ liệu hiện tại!`))return;catalog=data.catalog||[];national=data.national||[];suppliers=data.suppliers||[];records=data.records||[];settings=data.settings||{};packmap=data.packmap||{};DB.set('catalog',catalog);DB.set('national',national);DB.set('suppliers',suppliers);DB.set('records',records);DB.set('settings',settings);DB.set('packmap',packmap);updateRecordCount();renderStorageInfo();toast('Phục hồi thành công!','success');}catch(err){toast('File sao lưu không hợp lệ','error');}};r.readAsText(file);input.value='';}
+function clearAllData(){if(!prompt('Nhập "XOA" để xác nhận xóa toàn bộ dữ liệu:')?.includes('XOA'))return;catalog=[];national=[];suppliers=[];records=[];packmap={};['catalog','national','suppliers','records'].forEach(k=>DB.set(k,[]));DB.set('packmap',{});updateRecordCount();renderStorageInfo();toast('Đã xóa toàn bộ dữ liệu','info');}
 function renderStorageInfo(){let size=0;for(let k in localStorage)if(k.startsWith('pi_'))size+=localStorage[k].length;document.getElementById('storage-info').innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px"><div><div class="info-label">Phiếu nhập</div><div class="info-value">${records.length}</div></div><div><div class="info-label">Danh mục quầy</div><div class="info-value">${catalog.length}</div></div><div><div class="info-label">Dược quốc gia</div><div class="info-value">${national.length}</div></div><div><div class="info-label">Nhà cung cấp</div><div class="info-value">${suppliers.length}</div></div><div><div class="info-label">Dung lượng</div><div class="info-value">${(size/1024).toFixed(1)} KB</div></div></div>`;}
 
 function loadSettings(){document.getElementById('s-name').value=settings.name||'';document.getElementById('s-shopcode').value=settings.shopcode||'';document.getElementById('s-keeper').value=settings.keeper||'';document.getElementById('s-supplier').value=settings.supplier||'';document.getElementById('s-apikey').value=DB.get('apikey','')||'';const isDark=currentTheme==='dark';document.getElementById('btn-dark').className='btn '+(isDark?'btn-primary':'btn-outline');document.getElementById('btn-light').className='btn '+(isDark?'btn-outline':'btn-primary');}
 function saveSettings(){settings={name:document.getElementById('s-name').value,shopcode:document.getElementById('s-shopcode').value,keeper:document.getElementById('s-keeper').value,supplier:document.getElementById('s-supplier').value};DB.set('settings',settings);toast('Đã lưu cài đặt!','success');}
-function saveAPIKey(){apiKey=document.getElementById('s-apikey').value.trim();DB.set('apikey',apiKey);toast('Đã lưu API Key!','success');}
+function cleanApiKey(raw){return String(raw||'').replace(/[\s\u200B-\u200D\uFEFF]/g,'');}
+function saveAPIKey(){
+  apiKey=cleanApiKey(document.getElementById('s-apikey').value);
+  document.getElementById('s-apikey').value=apiKey;
+  DB.set('apikey',apiKey);
+  document.getElementById('apikey-test-result').innerHTML='';
+  toast('Đã lưu API Key!','success');
+}
+async function testAPIKey(){
+  const key=cleanApiKey(document.getElementById('s-apikey').value)||apiKey||DB.get('apikey','');
+  const box=document.getElementById('apikey-test-result');
+  if(!key){box.innerHTML='<span style="color:var(--red)">⚠️ Vui lòng nhập API Key trước khi kiểm tra.</span>';return;}
+  const btn=document.getElementById('btn-test-key');
+  btn.disabled=true;btn.innerHTML='⏳ Đang kiểm tra...';
+  box.innerHTML='<span style="color:var(--text3)">Đang gửi yêu cầu thử đến Gemini...</span>';
+  const originalKey=apiKey;
+  apiKey=key; // tạm gán để callGeminiAI dùng đúng key đang nhập, kể cả khi chưa bấm Lưu
+  try{
+    await callGeminiAI([{text:'ping'}]);
+    box.innerHTML='<span style="color:var(--accent)">✅ API Key hợp lệ và hoạt động tốt!</span>';
+  }catch(e){
+    const msg=e.message||'';
+    let hint='';
+    if(/API key not valid|API_KEY_INVALID/i.test(msg)){
+      hint='Key không hợp lệ. Kiểm tra: (1) đã copy đủ, không thừa/thiếu ký tự hay khoảng trắng; (2) key được lấy từ <a href="https://aistudio.google.com/apikey" target="_blank" style="color:var(--accent2)">Google AI Studio</a>, không phải key Vertex AI/Cloud Console; (3) key chưa bị xóa/thu hồi — thử tạo key mới.';
+    }else if(/PERMISSION_DENIED|403/i.test(msg)){
+      hint='Key bị giới hạn quyền truy cập (có thể do giới hạn theo domain/IP khi tạo key). Vào Google AI Studio kiểm tra lại giới hạn của key, hoặc tạo key mới không giới hạn.';
+    }else if(/RESOURCE_EXHAUSTED|quota|429/i.test(msg)){
+      hint='Đã hết hạn mức miễn phí (quota) trong ngày/phút. Vui lòng đợi rồi thử lại, hoặc tạo API Key từ tài khoản Google khác.';
+    }else if(/high demand|overloaded|503|UNAVAILABLE/i.test(msg)){
+      hint='Gemini AI đang quá tải tạm thời (đã thử lại nhiều lần và đổi model dự phòng nhưng vẫn quá tải). Key của bạn có thể vẫn ổn — vui lòng thử lại sau ít phút.';
+    }else if(/not found|404/i.test(msg)){
+      hint='Model tạm thời không khả dụng với key này. Vui lòng phản hồi lại cho bên phát triển app để cập nhật.';
+    }
+    box.innerHTML=`<span style="color:var(--red)">❌ Lỗi: ${esc(msg)}</span>${hint?`<div style="margin-top:6px;color:var(--text2)">💡 ${hint}</div>`:''}`;
+  }finally{
+    apiKey=originalKey;
+    btn.disabled=false;btn.innerHTML='🔍 Kiểm tra Key';
+  }
+}
 
 function fmtNum(n){if(isNaN(n))return'0';return Math.round(n).toLocaleString('vi-VN');}
 function fmtDateInput(d){if(!d)return'';const dt=new Date(d);if(isNaN(dt))return String(d);return`${dt.getDate().toString().padStart(2,'0')}/${(dt.getMonth()+1).toString().padStart(2,'0')}/${dt.getFullYear()}`;}
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
 updateRecordCount();
+applySavedSidebarState();
 </script>
 </body>
 </html>
