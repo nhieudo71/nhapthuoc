@@ -343,8 +343,7 @@ input[type="date"]{color-scheme:dark}
       <div class="form-grid form-grid-3">
         <div class="form-group"><label class="form-label">Ngày nhập *</label><input type="date" class="form-input" id="inp-date" required></div>
         <div class="form-group"><label class="form-label">Mã phiếu nhập *</label><input type="text" inputmode="numeric" pattern="[0-9]*" class="form-input" id="inp-code" placeholder="Tự động nếu để trống" oninput="this.value=this.value.replace(/[^0-9]/g,'')"></div>
-        <div class="form-group"><label class="form-label">Ký hiệu hóa đơn</label><input type="text" class="form-input" id="inp-invoice-serial" placeholder="VD: 1C25TAA"></div>
-        <div class="form-group"><label class="form-label">Số hóa đơn</label><input type="text" class="form-input" id="inp-invoice-num" placeholder="Số HĐ từ nhà cung cấp"></div>
+        <div class="form-group"><label class="form-label">Số hóa đơn</label><input type="text" class="form-input" id="inp-invoice-num" placeholder="VD: 123 hoặc 1C25TAA-123"></div>
         <div class="form-group"><label class="form-label">Ngày hóa đơn</label><input type="date" class="form-input" id="inp-invoice-date"></div>
         <div class="form-group"><label class="form-label">Thủ kho nhập *</label><input type="text" class="form-input" id="inp-keeper" placeholder="Tên thủ kho"></div>
         <div class="form-group"><label class="form-label">Mã kho nhập *</label><input type="text" class="form-input" id="inp-warehouse" placeholder="VD: SHOP1"></div>
@@ -697,14 +696,14 @@ async function parsePdfInvoice(file){
   const b64=await fileToBase64(file);
   setProgress(40,'Gửi PDF đến Gemini 2.5 Flash...');
   const catalogContext=catalog.slice(0,50).map(d=>`${d.code}: ${d.name} (${d.unit||''}, giá bán: ${d.price||0}, VAT: ${d.vat||0}%)`).join('\n');
-  const prompt=`Bạn là trợ lý nhận dạng hóa đơn dược phẩm. Trích xuất thông tin hóa đơn và toàn bộ sản phẩm từ hóa đơn PDF này.\n${catalogContext?`\nDanh mục thuốc của quầy:\n${catalogContext}`:''}\nTrả về JSON hợp lệ (không có markdown backticks):\n{"invoiceNumber":"Số hóa đơn (chỉ phần số)","invoiceSerial":"Ký hiệu hóa đơn (VD: 1C25TAA)","invoiceDate":"Ngày hóa đơn định dạng DD/MM/YYYY","items":[{"name":"Tên thuốc","lot":"Số lô","expiry":"DD/MM/YYYY","unit":"Đơn vị","qty":0,"price":0,"sellprice":0,"vat":0,"discount":0,"code":"mã hàng nếu biết"}]}`;
+  const prompt=`Bạn là trợ lý nhận dạng hóa đơn dược phẩm. Trích xuất thông tin hóa đơn và toàn bộ sản phẩm từ hóa đơn PDF này.\n${catalogContext?`\nDanh mục thuốc của quầy:\n${catalogContext}`:''}\nTrả về JSON hợp lệ (không có markdown backticks):\n{"invoiceNumber":"Số hóa đơn. Nếu có cả Ký hiệu và Số thì ghép dạng KyHieu-So, ví dụ 1C25TAA-123","invoiceDate":"Ngày hóa đơn định dạng DD/MM/YYYY","items":[{"name":"Tên thuốc","lot":"Số lô","expiry":"DD/MM/YYYY","unit":"Đơn vị","qty":0,"price":0,"sellprice":0,"vat":0,"discount":0,"code":"mã hàng nếu biết"}]}`;
   try{
     const txt=await callGeminiAI([{inline_data:{mime_type:'application/pdf',data:b64.split(',')[1]}},{text:prompt}]);
     setProgress(80,'Nhận kết quả...');
     const clean=txt.replace(/```json|```/g,'').trim();
     const parsed=JSON.parse(clean);
     const items=(parsed.items||[]).map(it=>({...it,matched:catalog.some(d=>d.code===it.code&&it.code)}));
-    setProgress(100,'Hoàn tất!');setTimeout(()=>{showProgress(false);initImportView(items,{invoiceNumber:parsed.invoiceNumber,invoiceSerial:parsed.invoiceSerial,invoiceDate:parsed.invoiceDate});},300);
+    setProgress(100,'Hoàn tất!');setTimeout(()=>{showProgress(false);initImportView(items,{invoiceNumber:parsed.invoiceNumber,invoiceDate:parsed.invoiceDate});},300);
   }catch(e){
     showProgress(false);
     if(e.message==='NO_KEY'){toast('Vui lòng nhập Gemini API Key trong Cài đặt','error');return;}
@@ -752,14 +751,15 @@ async function parsePdfText(file){
   }catch(e){showProgress(false);toast('Lỗi đọc PDF: '+e.message,'error');}
 }
 
-// Dò tìm ký hiệu, số hóa đơn & ngày hóa đơn trong văn bản trích xuất từ PDF (fallback không dùng AI)
+// Dò tìm ký hiệu + số hóa đơn (gộp bằng dấu gạch) & ngày hóa đơn trong văn bản trích xuất từ PDF (fallback không dùng AI)
 function extractInvoiceInfo(text){
-  const info={invoiceNumber:'',invoiceSerial:'',invoiceDate:''};
+  const info={invoiceNumber:'',invoiceDate:''};
   const serialM=text.match(/(?:ký\s*hiệu|serial)[\s:.#]*([A-Za-z0-9]{6,12})/i);
-  if(serialM)info.invoiceSerial=serialM[1].trim();
   const numM=text.match(/(?:số\s*(?:hóa\s*đơn|hđ)|invoice\s*(?:no|number)?)[\s:.#]*(\d{1,10})/i)
     || text.match(/(?:no\.?|№)\s*[:.#]?\s*(\d{4,10})\b/i);
-  if(numM)info.invoiceNumber=numM[1].trim();
+  const serial=serialM?serialM[1].trim():'';
+  const num=numM?numM[1].trim():'';
+  info.invoiceNumber=serial&&num?`${serial}-${num}`:(num||serial);
   const dateM=text.match(/(?:ngày\s*(?:hóa\s*đơn|hđ)?)[\s:.#]*(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/i)
     || text.match(/ngày\s*(\d{1,2})\s*tháng\s*(\d{1,2})\s*năm\s*(\d{4})/i);
   if(dateM)info.invoiceDate=`${dateM[1].padStart(2,'0')}/${dateM[2].padStart(2,'0')}/${dateM[3].length===2?'20'+dateM[3]:dateM[3]}`;
@@ -843,14 +843,14 @@ async function parseImageInvoice(file){
   if(!key){toast('Vui lòng nhập Gemini API Key trong Cài đặt để xử lý ảnh','error');showProgress(false);return;}
   setProgress(20,'Đang mã hóa ảnh...');const b64=await fileToBase64(file);setProgress(40,'Gửi ảnh đến Gemini 2.5 Flash...');
   const catalogContext=catalog.slice(0,50).map(d=>`${d.code}: ${d.name} (${d.unit||''}, giá bán: ${d.price||0}, VAT: ${d.vat||0}%)`).join('\n');
-  const prompt=`Bạn là trợ lý nhận dạng hóa đơn dược phẩm. Trích xuất thông tin hóa đơn và toàn bộ sản phẩm.\n${catalogContext?`\nDanh mục:\n${catalogContext}`:''}\nTrả về JSON hợp lệ (không markdown):\n{"invoiceNumber":"Số hóa đơn (chỉ phần số)","invoiceSerial":"Ký hiệu hóa đơn (VD: 1C25TAA)","invoiceDate":"Ngày hóa đơn định dạng DD/MM/YYYY","items":[{"name":"","lot":"","expiry":"DD/MM/YYYY","unit":"","qty":0,"price":0,"sellprice":0,"vat":0,"discount":0,"code":""}]}`;
+  const prompt=`Bạn là trợ lý nhận dạng hóa đơn dược phẩm. Trích xuất thông tin hóa đơn và toàn bộ sản phẩm.\n${catalogContext?`\nDanh mục:\n${catalogContext}`:''}\nTrả về JSON hợp lệ (không markdown):\n{"invoiceNumber":"Số hóa đơn. Nếu có cả Ký hiệu và Số thì ghép dạng KyHieu-So, ví dụ 1C25TAA-123","invoiceDate":"Ngày hóa đơn định dạng DD/MM/YYYY","items":[{"name":"","lot":"","expiry":"DD/MM/YYYY","unit":"","qty":0,"price":0,"sellprice":0,"vat":0,"discount":0,"code":""}]}`;
   try{
     const txt=await callGeminiAI([{inline_data:{mime_type:file.type||'image/jpeg',data:b64.split(',')[1]}},{text:prompt}]);
     setProgress(80,'Nhận kết quả...');
     const clean=txt.replace(/```json|```/g,'').trim();
     const parsed=JSON.parse(clean);
     const items=(parsed.items||[]).map(it=>({...it,matched:catalog.some(d=>d.code===it.code&&it.code)}));
-    setProgress(100,'Hoàn tất!');setTimeout(()=>{showProgress(false);initImportView(items,{invoiceNumber:parsed.invoiceNumber,invoiceSerial:parsed.invoiceSerial,invoiceDate:parsed.invoiceDate});},300);
+    setProgress(100,'Hoàn tất!');setTimeout(()=>{showProgress(false);initImportView(items,{invoiceNumber:parsed.invoiceNumber,invoiceDate:parsed.invoiceDate});},300);
   }catch(e){showProgress(false);toast('Lỗi AI: '+e.message,'error');}
 }
 function fileToBase64(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(file);});}
@@ -1019,9 +1019,8 @@ function initImportView(items,invoiceInfo){
   document.getElementById('inp-keeper').value=settings.keeper||'';
   document.getElementById('inp-warehouse').value=settings.shopcode||'';
   document.getElementById('inp-supplier').value=settings.supplier||'';
-  // Tự động điền Ký hiệu / Số hóa đơn / Ngày hóa đơn nếu trích xuất được từ file PDF/ảnh
+  // Tự động điền Số hóa đơn (số + ký hiệu, phân biệt bằng gạch) / Ngày hóa đơn nếu trích xuất được từ file PDF/ảnh
   if(invoiceInfo){
-    if(invoiceInfo.invoiceSerial)document.getElementById('inp-invoice-serial').value=invoiceInfo.invoiceSerial;
     if(invoiceInfo.invoiceNumber)document.getElementById('inp-invoice-num').value=invoiceInfo.invoiceNumber;
     if(invoiceInfo.invoiceDate){
       const iso=vnDateToISO(invoiceInfo.invoiceDate);
@@ -1029,7 +1028,7 @@ function initImportView(items,invoiceInfo){
     }
   }
   renderItemsTable();
-  const infoMsg=(invoiceInfo&&(invoiceInfo.invoiceSerial||invoiceInfo.invoiceNumber||invoiceInfo.invoiceDate))?' (đã tự nhận thông tin hóa đơn)':'';
+  const infoMsg=(invoiceInfo&&(invoiceInfo.invoiceNumber||invoiceInfo.invoiceDate))?' (đã tự nhận thông tin hóa đơn)':'';
   toast('Đọc xong! '+items.length+' sản phẩm'+infoMsg,'success');
 }
 // Chuyển dd/mm/yyyy -> yyyy-mm-dd để gán vào input type="date"
@@ -1101,7 +1100,7 @@ function showDrugAC(idx,input){
 }
 function selectDrugAC(idx,name,code,unit,price,vat,src){currentItems[idx].name=name;currentItems[idx].code=code;if(unit)currentItems[idx].unit=unit;if(price)currentItems[idx].sellprice=price;if(vat)currentItems[idx].vat=vat;currentItems[idx].matched=!!code;currentItems[idx].matchSrc=src||'';renderItemsTable();document.getElementById('ac-'+idx).style.display='none';}
 
-function getFormData(){return{date:document.getElementById('inp-date').value,code:document.getElementById('inp-code').value,invoiceSerial:document.getElementById('inp-invoice-serial').value,invoiceNum:document.getElementById('inp-invoice-num').value,invoiceDate:document.getElementById('inp-invoice-date').value,keeper:document.getElementById('inp-keeper').value,warehouse:document.getElementById('inp-warehouse').value,supplier:document.getElementById('inp-supplier').value,discount:document.getElementById('inp-discount').value,paid:document.getElementById('inp-paid').value,deliverer:document.getElementById('inp-deliverer').value,transport:document.getElementById('inp-transport').value,note:document.getElementById('inp-note').value};}
+function getFormData(){return{date:document.getElementById('inp-date').value,code:document.getElementById('inp-code').value,invoiceNum:document.getElementById('inp-invoice-num').value,invoiceDate:document.getElementById('inp-invoice-date').value,keeper:document.getElementById('inp-keeper').value,warehouse:document.getElementById('inp-warehouse').value,supplier:document.getElementById('inp-supplier').value,discount:document.getElementById('inp-discount').value,paid:document.getElementById('inp-paid').value,deliverer:document.getElementById('inp-deliverer').value,transport:document.getElementById('inp-transport').value,note:document.getElementById('inp-note').value};}
 function editRecord(idx){
   const r=records[idx];if(!r)return;
   editingRecordIdx=idx;
@@ -1114,7 +1113,6 @@ function editRecord(idx){
   document.getElementById('btn-export').disabled=false;
   document.getElementById('inp-date').value=r.date||'';
   document.getElementById('inp-code').value=r.code||'';
-  document.getElementById('inp-invoice-serial').value=r.invoiceSerial||'';
   document.getElementById('inp-invoice-num').value=r.invoiceNum||'';
   document.getElementById('inp-invoice-date').value=r.invoiceDate||'';
   document.getElementById('inp-keeper').value=r.keeper||'';
@@ -1156,9 +1154,9 @@ function exportVNPT(){const form=getFormData();const wb=buildVNPTWorkbook(form,c
 function exportRecordVNPT(idx){const rec=records[idx];if(!rec)return;const wb=buildVNPTWorkbook(rec,rec.items||[]);XLSX.writeFile(wb,`phieunhap_${rec.code||idx}_${rec.date||'export'}.xls`,{bookType:'xls'});toast('Đã xuất file Excel VNPT (.xls)!','success');}
 function buildVNPTWorkbook(form,items){
   const wb=XLSX.utils.book_new();
-  const s1H=['STT','Ngày nhập *','Mã phiếu nhập *','Ngày hóa đơn','Số hóa đơn','Ký hiệu hóa đơn','Thủ kho nhập *','Mã kho nhập *','Chiết khấu (%)','Mã nhà cung cấp (***) ','Phương tiện vận chuyển','Đơn vị vận chuyển','Người giao hàng','Thực trả NCC (***) ','Ghi chú'];
-  const s1R=[1,toVNDate(form.date),form.code,toVNDate(form.invoiceDate)||'',form.invoiceNum||'',form.invoiceSerial||'',form.keeper,form.warehouse,form.discount||'',form.supplier||'',form.transport||'','',form.deliverer||'',form.paid||'',form.note||''];
-  const ws1=XLSX.utils.aoa_to_sheet([s1H,s1R]);ws1['!cols']=s1H.map((_,i)=>({wch:[5,14,16,14,14,14,18,14,12,18,18,16,16,16,20][i]||14}));
+  const s1H=['STT','Ngày nhập *','Mã phiếu nhập *','Ngày hóa đơn','Số hóa đơn','Thủ kho nhập *','Mã kho nhập *','Chiết khấu (%)','Mã nhà cung cấp (***) ','Phương tiện vận chuyển','Đơn vị vận chuyển','Người giao hàng','Thực trả NCC (***) ','Ghi chú'];
+  const s1R=[1,toVNDate(form.date),form.code,toVNDate(form.invoiceDate)||'',form.invoiceNum||'',form.keeper,form.warehouse,form.discount||'',form.supplier||'',form.transport||'','',form.deliverer||'',form.paid||'',form.note||''];
+  const ws1=XLSX.utils.aoa_to_sheet([s1H,s1R]);ws1['!cols']=s1H.map((_,i)=>({wch:[5,14,16,14,14,18,14,12,18,18,16,16,16,20][i]||14}));
   XLSX.utils.book_append_sheet(wb,ws1,'Thông tin phiếu nhập');
   const s2H=['STT *','Mã phiếu nhập *','Mã hàng *','Tên hàng ','Đơn vị tính ','Giá nhập *','Giá bán *','Số lượng *','VAT (%)','Chiết khấu (%)','Lô SX **','Ngày HH **','Vị trí'];
   const s2R=items.map((it,i)=>[i+1,form.code,it.code||'',it.name,it.unit||'',parseFloat(it.price)||0,parseInt(it.sellprice)||0,parseInt(it.qty)||0,parseFloat(it.vat)||0,parseFloat(it.discount)||0,it.lot||'',convertExpiryDate(it.expiry),'']);
@@ -1194,7 +1192,7 @@ function renderStats(){
 function viewRecord(idx){
   currentRecordIdx=idx;const r=records[idx];const total=(r.items||[]).reduce((s,it)=>s+(it.qty||0)*(it.price||0)*(1+(it.vat||0)/100)*(1-(it.discount||0)/100),0);
   document.getElementById('rec-modal-title').textContent=`Phiếu nhập ${r.code||''} — ${r.date||''}`;
-  document.getElementById('rec-modal-body').innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:14px"><div><div class="info-label">Ngày nhập</div><div class="info-value">${r.date||'—'}</div></div><div><div class="info-label">Mã phiếu</div><div class="info-value text-mono">${r.code||'—'}</div></div><div><div class="info-label">Thủ kho</div><div class="info-value">${r.keeper||'—'}</div></div><div><div class="info-label">Mã kho</div><div class="info-value text-mono">${r.warehouse||'—'}</div></div><div><div class="info-label">NCC</div><div class="info-value">${r.supplier||'—'}</div></div><div><div class="info-label">Ký hiệu HĐ</div><div class="info-value">${r.invoiceSerial||'—'}</div></div><div><div class="info-label">Số HĐ</div><div class="info-value">${r.invoiceNum||'—'}</div></div></div><div class="table-wrap" style="max-height:380px;overflow-y:auto"><table><thead><tr><th class="row-num">#</th><th>Mã hàng</th><th>Tên hàng</th><th>ĐVT</th><th>Số lô</th><th>HSD</th><th>SL</th><th>Đơn giá</th><th>VAT%</th><th>Thành tiền</th></tr></thead><tbody>${(r.items||[]).map((it,i)=>{const a=(it.qty||0)*(it.price||0)*(1+(it.vat||0)/100)*(1-(it.discount||0)/100);return`<tr><td class="row-num">${i+1}</td><td class="td-mono">${it.code||'—'}</td><td>${esc(it.name)}</td><td>${it.unit||''}</td><td class="td-mono">${it.lot||'—'}</td><td>${it.expiry||'—'}</td><td class="td-mono">${it.qty}</td><td class="td-mono">${fmtNum(it.price)}</td><td>${it.vat||0}%</td><td class="td-mono" style="color:var(--accent2)">${fmtNum(a)}</td></tr>`}).join('')}</tbody></table></div><div style="text-align:right;margin-top:12px;font-weight:800;font-size:15px">Tổng: <span style="color:var(--accent2)">${fmtNum(total)} đ</span></div>`;
+  document.getElementById('rec-modal-body').innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:14px"><div><div class="info-label">Ngày nhập</div><div class="info-value">${r.date||'—'}</div></div><div><div class="info-label">Mã phiếu</div><div class="info-value text-mono">${r.code||'—'}</div></div><div><div class="info-label">Thủ kho</div><div class="info-value">${r.keeper||'—'}</div></div><div><div class="info-label">Mã kho</div><div class="info-value text-mono">${r.warehouse||'—'}</div></div><div><div class="info-label">NCC</div><div class="info-value">${r.supplier||'—'}</div></div><div><div class="info-label">Số HĐ</div><div class="info-value">${r.invoiceNum||'—'}</div></div></div><div class="table-wrap" style="max-height:380px;overflow-y:auto"><table><thead><tr><th class="row-num">#</th><th>Mã hàng</th><th>Tên hàng</th><th>ĐVT</th><th>Số lô</th><th>HSD</th><th>SL</th><th>Đơn giá</th><th>VAT%</th><th>Thành tiền</th></tr></thead><tbody>${(r.items||[]).map((it,i)=>{const a=(it.qty||0)*(it.price||0)*(1+(it.vat||0)/100)*(1-(it.discount||0)/100);return`<tr><td class="row-num">${i+1}</td><td class="td-mono">${it.code||'—'}</td><td>${esc(it.name)}</td><td>${it.unit||''}</td><td class="td-mono">${it.lot||'—'}</td><td>${it.expiry||'—'}</td><td class="td-mono">${it.qty}</td><td class="td-mono">${fmtNum(it.price)}</td><td>${it.vat||0}%</td><td class="td-mono" style="color:var(--accent2)">${fmtNum(a)}</td></tr>`}).join('')}</tbody></table></div><div style="text-align:right;margin-top:12px;font-weight:800;font-size:15px">Tổng: <span style="color:var(--accent2)">${fmtNum(total)} đ</span></div>`;
   openModal('modal-record');
 }
 function deleteRecord(idx){if(!confirm('Xóa phiếu nhập này?'))return;records.splice(idx,1);DB.set('records',records);closeModal('modal-record');renderRecords();updateRecordCount();toast('Đã xóa phiếu nhập','info');}
