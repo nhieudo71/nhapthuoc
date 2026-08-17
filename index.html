@@ -1,0 +1,1391 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>PharmImport — Nhập Hàng Dược</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root {
+  --radius: 10px; --radius2: 14px;
+  --sidebar-w: 232px; --topbar-h: 58px;
+  --accent: #16a34a; --accent2: #22c55e;
+  --accent-light: rgba(22,163,74,.12); --accent-border: rgba(22,163,74,.28);
+  --blue: #2563eb; --blue2: #3b82f6;
+  --orange: #d97706; --orange2: #f59e0b;
+  --red: #dc2626; --red2: #ef4444;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,.1);
+  --shadow: 0 4px 16px rgba(0,0,0,.12);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,.18);
+  --transition: .18s cubic-bezier(.4,0,.2,1);
+}
+[data-theme="dark"] {
+  --bg:#0f1117; --bg2:#181d27; --bg3:#1e2433; --bg4:#252b3a; --bg5:#2c3347;
+  --border:#2a3147; --border2:#323d55;
+  --text:#e8edf5; --text2:#8892aa; --text3:#5a6480;
+  --input-bg:#1e2433; --table-head:#1a2030; --scrollbar:#2c3347;
+  --toast-bg:#1e2433; --modal-overlay:rgba(0,0,0,.75);
+}
+[data-theme="light"] {
+  --bg:#f5f7fa; --bg2:#ffffff; --bg3:#f0f2f7; --bg4:#e8ecf4; --bg5:#dce1ee;
+  --border:#dde1ec; --border2:#c8cedf;
+  --text:#1a1f2e; --text2:#4a5472; --text3:#8891ac;
+  --input-bg:#f5f7fa; --table-head:#f0f3fa; --scrollbar:#c5cce0;
+  --toast-bg:#ffffff; --modal-overlay:rgba(0,0,0,.45);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:14px;-webkit-tap-highlight-color:transparent}
+body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;line-height:1.55;transition:background var(--transition),color var(--transition)}
+input,button,select,textarea{font-family:inherit}
+::-webkit-scrollbar{width:6px;height:14px}
+::-webkit-scrollbar-track{background:var(--bg4);border-radius:10px}
+::-webkit-scrollbar-thumb{background:var(--scrollbar);border-radius:10px;border:2px solid var(--bg4)}
+::-webkit-scrollbar-thumb:hover{background:var(--text3)}
+::-webkit-scrollbar-corner{background:transparent}
+.sidebar::-webkit-scrollbar,.modal-body::-webkit-scrollbar,.autocomplete-list::-webkit-scrollbar{width:4px;height:4px}
+
+/* LAYOUT */
+.app-shell{display:flex;min-height:100vh;position:relative}
+.sidebar{width:var(--sidebar-w);background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:200;transition:transform var(--transition),background var(--transition),border-color var(--transition);overflow-y:auto;overflow-x:hidden}
+.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:190;opacity:0;transition:opacity .25s}
+.sidebar-overlay.show{opacity:1}
+.main{margin-left:var(--sidebar-w);flex:1;min-height:100vh;transition:margin var(--transition)}
+
+/* SIDEBAR */
+.sidebar-logo{padding:18px 14px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.logo-mark{display:flex;align-items:center;gap:10px}
+.logo-icon{width:38px;height:38px;background:linear-gradient(135deg,#16a34a 0%,#065f46 100%);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:19px;box-shadow:0 2px 12px rgba(22,163,74,.3);flex-shrink:0}
+.logo-text{font-weight:800;font-size:15px;color:var(--text);letter-spacing:-.2px}
+.logo-sub{font-size:10.5px;color:var(--text3);font-weight:500}
+.sidebar-close{display:none;background:none;border:none;color:var(--text3);font-size:20px;cursor:pointer;padding:4px 6px;border-radius:6px}
+.sidebar-close:hover{background:var(--bg4);color:var(--text)}
+.nav{padding:10px 8px;flex:1;overflow-y:auto}
+.nav-section{margin-bottom:18px}
+.nav-label{font-size:9.5px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1.1px;padding:0 8px 5px;display:block}
+.nav-item{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:var(--radius);cursor:pointer;color:var(--text2);transition:all var(--transition);font-size:13px;font-weight:600;margin-bottom:1px;white-space:nowrap;overflow:hidden;border:1px solid transparent;-webkit-user-select:none;user-select:none}
+.nav-item:hover{background:var(--bg3);color:var(--text)}
+.nav-item:active{transform:scale(.98)}
+.nav-item.active{background:var(--accent-light);color:var(--accent2);border-color:var(--accent-border)}
+.nav-icon{font-size:16px;width:20px;text-align:center;flex-shrink:0}
+.nav-badge{background:var(--accent);color:#fff;font-size:10px;font-weight:700;padding:1px 7px;border-radius:20px;margin-left:auto;flex-shrink:0}
+.sidebar-footer{padding:12px 14px;border-top:1px solid var(--border);font-size:11px;color:var(--text3);flex-shrink:0}
+
+/* TOPBAR */
+.topbar{background:var(--bg2);border-bottom:1px solid var(--border);height:var(--topbar-h);padding:0 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;transition:background var(--transition),border-color var(--transition);gap:12px}
+.topbar-left{display:flex;align-items:center;gap:12px;min-width:0}
+.menu-btn{display:none;background:none;border:none;color:var(--text2);font-size:20px;cursor:pointer;padding:6px;border-radius:8px;flex-shrink:0;transition:background var(--transition)}
+.menu-btn:hover{background:var(--bg4);color:var(--text)}
+.page-title{font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.page-sub{font-size:11.5px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.topbar-actions{display:flex;gap:6px;align-items:center;flex-shrink:0}
+
+/* THEME TOGGLE */
+.theme-toggle{background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:5px 10px;display:flex;align-items:center;gap:6px;cursor:pointer;transition:all var(--transition);flex-shrink:0;font-size:12px;font-weight:600;color:var(--text2)}
+.theme-toggle:hover{border-color:var(--accent2);color:var(--text)}
+.toggle-icon{font-size:15px}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:8px 14px;border-radius:var(--radius);font-size:13px;font-weight:700;cursor:pointer;border:1px solid transparent;transition:all var(--transition);text-decoration:none;white-space:nowrap;-webkit-user-select:none;user-select:none;touch-action:manipulation}
+.btn:active{transform:scale(.97)}
+.btn-primary{background:var(--accent);color:#fff;border-color:var(--accent);box-shadow:0 2px 8px rgba(22,163,74,.3)}
+.btn-primary:hover{background:var(--accent2);border-color:var(--accent2)}
+.btn-outline{background:transparent;color:var(--text);border-color:var(--border2)}
+.btn-outline:hover{background:var(--bg4)}
+.btn-ghost{background:transparent;color:var(--text2);border-color:transparent}
+.btn-ghost:hover{background:var(--bg4);color:var(--text)}
+.btn-danger{background:var(--red);color:#fff;border-color:var(--red)}
+.btn-danger:hover{background:var(--red2)}
+.btn-blue{background:var(--blue);color:#fff;border-color:var(--blue);box-shadow:0 2px 8px rgba(37,99,235,.3)}
+.btn-blue:hover{background:var(--blue2)}
+.btn-sm{padding:5px 11px;font-size:12px}
+.btn-xs{padding:3px 8px;font-size:11px}
+.btn:disabled{opacity:.45;cursor:not-allowed;pointer-events:none}
+
+/* CONTENT & CARDS */
+.content{padding:18px;max-width:1400px}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius2);padding:18px;margin-bottom:14px;transition:background var(--transition),border-color var(--transition);box-shadow:var(--shadow-sm)}
+.card-title{font-weight:700;font-size:13.5px;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+
+/* STATS */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius2);padding:16px;transition:all var(--transition);box-shadow:var(--shadow-sm)}
+.stat-card:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
+.stat-label{font-size:10.5px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.6px}
+.stat-value{font-size:22px;font-weight:800;margin:4px 0 2px;font-family:'JetBrains Mono',monospace}
+.stat-change{font-size:11px;color:var(--text3)}
+.stat-green .stat-value{color:var(--accent2)}
+.stat-blue .stat-value{color:var(--blue2)}
+.stat-orange .stat-value{color:var(--orange2)}
+
+/* UPLOAD */
+.upload-zone{border:2px dashed var(--border2);border-radius:var(--radius2);padding:44px 20px;text-align:center;cursor:pointer;transition:all var(--transition);background:var(--bg3);position:relative}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--accent2);background:var(--accent-light);transform:scale(1.005)}
+.upload-icon{font-size:42px;margin-bottom:12px}
+.upload-title{font-weight:700;font-size:15px;margin-bottom:6px}
+.upload-sub{color:var(--text3);font-size:13px;line-height:1.6}
+#file-input{display:none}
+
+/* PROGRESS */
+.progress-wrap{margin:14px 0}
+.progress-bar{height:5px;background:var(--bg4);border-radius:5px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:5px;transition:width .35s}
+.progress-text{font-size:12px;color:var(--text3);margin-top:6px;font-weight:500}
+
+/* TABLE */
+.table-wrap{overflow-x:auto;border-radius:var(--radius2);border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead{position:sticky;top:0;z-index:10}
+th{background:var(--table-head);color:var(--text2);font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;padding:10px 12px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;transition:background var(--transition)}
+td{padding:8px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--bg3)}
+.td-mono{font-family:'JetBrains Mono',monospace;font-size:12px}
+
+/* FORMS */
+.form-group{margin-bottom:12px}
+.form-label{font-size:11.5px;font-weight:700;color:var(--text2);margin-bottom:5px;display:block}
+.form-input,.form-select{width:100%;background:var(--input-bg);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);padding:9px 12px;font-size:13px;font-weight:500;transition:all var(--transition);-webkit-appearance:none}
+.form-input:focus,.form-select:focus{outline:none;border-color:var(--accent2);box-shadow:0 0 0 3px var(--accent-light)}
+.form-input::placeholder{color:var(--text3)}
+input[type="date"]{color-scheme:dark}
+[data-theme="light"] input[type="date"]{color-scheme:light}
+.form-grid{display:grid;gap:10px}
+.form-grid-2{grid-template-columns:1fr 1fr}
+.form-grid-3{grid-template-columns:1fr 1fr 1fr}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:var(--modal-overlay);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px;opacity:0;pointer-events:none;transition:opacity .22s}
+.modal-overlay.show{opacity:1;pointer-events:all}
+.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius2);width:100%;max-width:680px;max-height:90vh;overflow:hidden;display:flex;flex-direction:column;transform:scale(.94) translateY(8px);transition:transform .22s cubic-bezier(.34,1.56,.64,1);box-shadow:var(--shadow-lg)}
+.modal-overlay.show .modal{transform:scale(1) translateY(0)}
+.modal-header{padding:16px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.modal-title{font-weight:700;font-size:15px}
+.modal-body{padding:18px;overflow-y:auto;flex:1}
+.modal-footer{padding:13px 18px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;flex-shrink:0}
+
+/* PAGES */
+.page{display:none}
+.page.active{display:block;animation:fadeIn .18s ease}
+@keyframes fadeIn{from{opacity:.5}to{opacity:1}}
+
+/* TOAST */
+.toast-container{position:fixed;bottom:16px;right:16px;z-index:9999;display:flex;flex-direction:column;gap:8px}
+.toast{background:var(--toast-bg);border:1px solid var(--border2);border-radius:var(--radius);padding:12px 15px;font-size:13px;font-weight:600;max-width:320px;min-width:200px;box-shadow:var(--shadow);animation:slideUp .22s cubic-bezier(.34,1.56,.64,1);display:flex;align-items:center;gap:10px}
+.toast-success{border-left:3px solid var(--accent2)}
+.toast-error{border-left:3px solid var(--red2)}
+.toast-info{border-left:3px solid var(--blue2)}
+@keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+
+/* SEARCH */
+.search-box{position:relative;display:inline-flex;align-items:center}
+.search-box input{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);padding:7px 12px 7px 32px;font-size:13px;width:200px;font-weight:500;transition:all var(--transition)}
+.search-box input:focus{outline:none;border-color:var(--accent2);width:240px;box-shadow:0 0 0 3px var(--accent-light)}
+.search-icon{position:absolute;left:9px;color:var(--text3);font-size:13px;pointer-events:none}
+
+/* AUTOCOMPLETE */
+.autocomplete-wrap{position:relative}
+.autocomplete-list{position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:600;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);max-height:210px;overflow-y:auto;box-shadow:var(--shadow-lg);animation:fadeIn .12s ease}
+.autocomplete-item{padding:9px 12px;cursor:pointer;font-size:12.5px;font-weight:500}
+.autocomplete-item:hover{background:var(--bg4)}
+.autocomplete-item .drug-code{color:var(--text3);font-family:monospace;margin-right:6px;font-size:11px}
+.drug-match{font-size:10.5px;color:var(--accent2);font-weight:600}
+.drug-nomatch{font-size:10.5px;color:var(--orange2);font-weight:600}
+
+/* MISC */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700}
+.badge-green{background:var(--accent-light);color:var(--accent2);border:1px solid var(--accent-border)}
+.badge-blue{background:rgba(37,99,235,.12);color:var(--blue2);border:1px solid rgba(37,99,235,.25)}
+.chip{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;background:var(--bg4);border:1px solid var(--border);border-radius:20px;font-size:11px;font-weight:600}
+.empty-state{text-align:center;padding:52px 20px;color:var(--text3)}
+.empty-icon{font-size:44px;margin-bottom:10px}
+.empty-title{font-size:14px;color:var(--text2);font-weight:700;margin-bottom:5px}
+.warning-box{background:rgba(217,119,6,.1);border:1px solid rgba(217,119,6,.28);border-radius:var(--radius);padding:10px 14px;font-size:12.5px;color:var(--orange2);font-weight:600;margin-bottom:12px}
+.info-box{background:rgba(37,99,235,.1);border:1px solid rgba(37,99,235,.25);border-radius:var(--radius);padding:10px 14px;font-size:12.5px;color:var(--blue2);margin-bottom:14px}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.row-num{width:34px;text-align:center;color:var(--text3);font-size:10.5px}
+.delete-row{cursor:pointer;color:var(--text3);padding:3px 7px;border-radius:6px;font-size:13px}
+.delete-row:hover{color:var(--red2);background:rgba(220,38,38,.1)}
+.record-item{display:flex;align-items:center;gap:10px;padding:12px 15px;border-bottom:1px solid var(--border);cursor:pointer;transition:background var(--transition)}
+.record-item:last-child{border-bottom:none}
+.record-item:hover{background:var(--bg3)}
+.record-item:active{background:var(--bg4)}
+.record-info{flex:1;min-width:0}
+.record-num{font-size:12.5px;font-weight:700}
+.record-date{font-size:11px;color:var(--text3);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.record-amount{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--accent2);font-weight:700;white-space:nowrap}
+.info-label{font-size:10.5px;color:var(--text3);margin-bottom:3px;font-weight:600;text-transform:uppercase;letter-spacing:.4px}
+.info-value{font-size:13px;font-weight:600}
+.text-mono{font-family:'JetBrains Mono',monospace}
+[data-theme="light"] .card{box-shadow:0 1px 4px rgba(0,0,0,.07)}
+[data-theme="light"] .stat-card:hover{box-shadow:0 4px 16px rgba(0,0,0,.1)}
+
+/* ==================== RESPONSIVE ==================== */
+@media (max-width:900px){
+  .sidebar{transform:translateX(-100%);box-shadow:var(--shadow-lg)}
+  .sidebar.open{transform:translateX(0)}
+  .sidebar-close{display:flex;align-items:center;justify-content:center}
+  .sidebar-overlay{display:block;pointer-events:none}
+  .sidebar-overlay.show{pointer-events:all}
+  .main{margin-left:0}
+  .menu-btn{display:flex}
+  .stats-grid{grid-template-columns:1fr 1fr}
+  .split{grid-template-columns:1fr}
+  .form-grid-3{grid-template-columns:1fr 1fr}
+  .content{padding:14px}
+  .topbar{padding:0 14px}
+  .search-box input{width:150px}
+  .search-box input:focus{width:170px}
+  .hide-tablet{display:none!important}
+}
+@media (max-width:600px){
+  .stats-grid{grid-template-columns:1fr 1fr;gap:8px}
+  .stat-card{padding:12px}
+  .stat-value{font-size:18px}
+  .form-grid-2{grid-template-columns:1fr}
+  .form-grid-3{grid-template-columns:1fr}
+  .content{padding:10px}
+  .card{padding:14px}
+  .topbar{padding:0 10px;height:52px;gap:6px}
+  .page-sub{display:none}
+  .toast-container{bottom:10px;right:8px;left:8px}
+  .toast{max-width:100%}
+  .modal-overlay{padding:6px;align-items:flex-end}
+  .modal{max-height:95vh;border-radius:var(--radius2) var(--radius2) 0 0}
+  .btn-sm{padding:5px 9px;font-size:11.5px}
+  .search-box input{width:120px;font-size:12px}
+  .search-box input:focus{width:140px}
+  .topbar-actions{gap:4px}
+  .hide-mobile{display:none!important}
+  .record-date{font-size:10.5px}
+  .btn-label-sm{display:none}
+}
+@media (max-width:400px){
+  .stats-grid{grid-template-columns:1fr 1fr}
+  .split{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="app-shell">
+
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-mark">
+      <div class="logo-icon">💊</div>
+      <div>
+        <div class="logo-text">PharmImport</div>
+        <div class="logo-sub">Quản lý nhập hàng</div>
+      </div>
+    </div>
+    <button class="sidebar-close" onclick="closeSidebar()">✕</button>
+  </div>
+  <nav class="nav">
+    <div class="nav-section">
+      <span class="nav-label">Nhập hàng</span>
+      <div class="nav-item active" data-page="import" onclick="showPage('import')"><span class="nav-icon">📥</span>Nhập hóa đơn mới</div>
+      <div class="nav-item" data-page="records" onclick="showPage('records')"><span class="nav-icon">📋</span>Lịch sử phiếu nhập<span class="nav-badge" id="record-count">0</span></div>
+    </div>
+    <div class="nav-section">
+      <span class="nav-label">Danh mục</span>
+      <div class="nav-item" data-page="catalog" onclick="showPage('catalog')"><span class="nav-icon">🗂️</span>Danh mục thuốc quầy</div>
+      <div class="nav-item" data-page="national" onclick="showPage('national')"><span class="nav-icon">🏥</span>Dược quốc gia</div>
+      <div class="nav-item" data-page="suppliers" onclick="showPage('suppliers')"><span class="nav-icon">🏢</span>Nhà cung cấp</div>
+    </div>
+    <div class="nav-section">
+      <span class="nav-label">Hệ thống</span>
+      <div class="nav-item" data-page="backup" onclick="showPage('backup')"><span class="nav-icon">💾</span>Sao lưu & Phục hồi</div>
+      <div class="nav-item" data-page="settings" onclick="showPage('settings')"><span class="nav-icon">⚙️</span>Cài đặt</div>
+    </div>
+  </nav>
+  <div class="sidebar-footer">
+    <div style="font-weight:700;margin-bottom:2px">PharmImport v1.0</div>
+    <div>Xuất file tương thích VNPT</div>
+  </div>
+</aside>
+
+<main class="main">
+
+<!-- PAGE: IMPORT -->
+<div id="page-import" class="page active">
+  <div class="topbar">
+    <div class="topbar-left">
+      <button class="menu-btn" onclick="openSidebar()">☰</button>
+      <div><div class="page-title">📥 Nhập hóa đơn mới</div><div class="page-sub">Tải hóa đơn lên để tự động xử lý</div></div>
+    </div>
+    <div class="topbar-actions">
+      <button class="theme-toggle" onclick="toggleTheme()" id="theme-btn"><span class="toggle-icon" id="theme-icon">🌙</span><span class="hide-mobile" id="theme-label">Tối</span></button>
+      <button class="btn btn-ghost btn-sm" onclick="clearImport()">🗑 <span class="btn-label-sm">Xóa</span></button>
+      <button class="btn btn-outline btn-sm" onclick="cancelEditRecord()" id="btn-cancel-edit" style="display:none">↩️ <span class="btn-label-sm">Hủy sửa</span></button>
+      <button class="btn btn-primary btn-sm" onclick="saveRecord()" id="btn-save" disabled>💾 <span class="btn-label-sm">Lưu</span></button>
+      <button class="btn btn-blue btn-sm" onclick="exportVNPT()" id="btn-export" disabled>⬇️ <span class="btn-label-sm">Xuất</span></button>
+    </div>
+  </div>
+  <div class="content">
+    <div class="card" id="upload-section">
+      <div class="card-title">📤 Bước 1 — Tải hóa đơn lên</div>
+      <div class="upload-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
+        <div class="upload-icon">📄</div>
+        <div class="upload-title">Kéo thả hóa đơn vào đây</div>
+        <div class="upload-sub">Excel (.xls, .xlsx, .csv) &nbsp;·&nbsp; Ảnh (PNG, JPG) &nbsp;·&nbsp; <span style="color:var(--accent2);font-weight:700">PDF</span><br><strong style="color:var(--accent2)">hoặc chạm để chọn file</strong></div>
+      </div>
+      <input type="file" id="file-input" accept=".png,.jpg,.jpeg,.xls,.xlsx,.csv,.pdf" onchange="handleFileUpload(this.files[0])">
+      <div id="upload-progress" style="display:none" class="progress-wrap">
+        <div class="progress-bar"><div class="progress-fill" id="prog-fill" style="width:0%"></div></div>
+        <div class="progress-text" id="prog-text">Đang xử lý...</div>
+      </div>
+    </div>
+
+    <div class="card" id="invoice-section" style="display:none">
+      <div class="card-title">📋 Bước 2 — Thông tin phiếu nhập <span style="font-size:11px;color:var(--text3);font-weight:500">(Sheet 1 — VNPT)</span></div>
+      <div class="form-grid form-grid-3">
+        <div class="form-group"><label class="form-label">Ngày nhập *</label><input type="date" class="form-input" id="inp-date" required></div>
+        <div class="form-group"><label class="form-label">Mã phiếu nhập *</label><input type="text" inputmode="numeric" pattern="[0-9]*" class="form-input" id="inp-code" placeholder="Tự động nếu để trống" oninput="this.value=this.value.replace(/[^0-9]/g,'')"></div>
+        <div class="form-group"><label class="form-label">Ký hiệu hóa đơn</label><input type="text" class="form-input" id="inp-invoice-serial" placeholder="VD: 1C25TAA"></div>
+        <div class="form-group"><label class="form-label">Số hóa đơn</label><input type="text" class="form-input" id="inp-invoice-num" placeholder="Số HĐ từ nhà cung cấp"></div>
+        <div class="form-group"><label class="form-label">Ngày hóa đơn</label><input type="date" class="form-input" id="inp-invoice-date"></div>
+        <div class="form-group"><label class="form-label">Thủ kho nhập *</label><input type="text" class="form-input" id="inp-keeper" placeholder="Tên thủ kho"></div>
+        <div class="form-group"><label class="form-label">Mã kho nhập *</label><input type="text" class="form-input" id="inp-warehouse" placeholder="VD: SHOP1"></div>
+        <div class="form-group"><label class="form-label">Mã nhà cung cấp</label>
+          <div class="autocomplete-wrap">
+            <input type="text" class="form-input" id="inp-supplier" placeholder="Mã hoặc tên NCC" oninput="filterSupplierAC(this.value)">
+            <div class="autocomplete-list" id="supplier-ac" style="display:none"></div>
+          </div>
+        </div>
+        <div class="form-group"><label class="form-label">Chiết khấu chung (%)</label><input type="number" class="form-input" id="inp-discount" placeholder="0" step="0.01" min="0"></div>
+        <div class="form-group"><label class="form-label">Thực trả NCC</label><input type="number" class="form-input" id="inp-paid" placeholder="Để trống = đủ" step="1"></div>
+        <div class="form-group"><label class="form-label">Người giao hàng</label><input type="text" class="form-input" id="inp-deliverer"></div>
+        <div class="form-group"><label class="form-label">Phương tiện vận chuyển</label><input type="text" class="form-input" id="inp-transport"></div>
+        <div class="form-group"><label class="form-label">Ghi chú</label><input type="text" class="form-input" id="inp-note"></div>
+      </div>
+    </div>
+
+    <div class="card" id="items-section" style="display:none">
+      <div class="card-title" style="justify-content:space-between;flex-wrap:wrap;gap:8px">
+        <span>💊 Bước 3 — Danh sách hàng nhập <span style="font-size:11px;color:var(--text3);font-weight:500">(Sheet 2 — VNPT)</span></span>
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+          <span id="items-stats" style="font-size:12px;color:var(--text3);font-weight:600"></span>
+          <button class="btn btn-outline btn-sm" onclick="rematchAll()" title="Dò lại mã từ danh mục">🔄 <span class="btn-label-sm">Dò lại</span></button>
+          <button class="btn btn-outline btn-sm" id="btn-ai-match" onclick="aiMatchAll()" title="Dùng Gemini AI dò mã hàng loạt">🤖 <span class="btn-label-sm">Dò mã AI</span></button>
+          <button class="btn btn-outline btn-sm" onclick="addRow()">+ <span class="btn-label-sm">Thêm dòng</span></button>
+        </div>
+      </div>
+      <div id="match-warning" class="warning-box" style="display:none">
+        ⚠️ Một số thuốc chưa có mã. Nhấn <strong>🔄 Dò lại</strong> hoặc <strong>🤖 Dò mã AI</strong> để tự động điền.
+      </div>
+      <div class="table-wrap">
+        <table id="items-table">
+          <thead><tr>
+            <th class="row-num">#</th>
+            <th style="min-width:170px">Tên hàng hóa</th>
+            <th style="min-width:90px">Mã hàng *</th>
+            <th class="hide-mobile">Đơn vị</th>
+            <th class="hide-mobile">Số lô</th>
+            <th>Hạn dùng</th>
+            <th>Số lượng</th>
+            <th>Đơn giá</th>
+            <th class="hide-tablet">Giá bán</th>
+            <th class="hide-mobile">VAT%</th>
+            <th class="hide-tablet">CK%</th>
+            <th>Thành tiền</th>
+            <th></th>
+          </tr></thead>
+          <tbody id="items-body"></tbody>
+          <tfoot><tr>
+            <td colspan="9" class="hide-tablet" style="text-align:right;font-weight:700;color:var(--text2);font-size:11px;text-transform:uppercase;letter-spacing:.5px">Tổng cộng</td>
+            <td colspan="2" class="hide-desktop"></td>
+            <td class="td-mono" style="text-align:right;color:var(--accent2);font-weight:800;font-size:13px" id="total-cell">0</td>
+            <td></td>
+          </tr></tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE: RECORDS -->
+<div id="page-records" class="page">
+  <div class="topbar">
+    <div class="topbar-left">
+      <button class="menu-btn" onclick="openSidebar()">☰</button>
+      <div><div class="page-title">📋 Lịch sử phiếu nhập</div><div class="page-sub">Tất cả phiếu nhập đã lưu</div></div>
+    </div>
+    <div class="topbar-actions">
+      <button class="theme-toggle" onclick="toggleTheme()" id="theme-btn2"><span class="toggle-icon" id="theme-icon2">🌙</span><span class="hide-mobile" id="theme-label2">Tối</span></button>
+      <div class="search-box"><span class="search-icon">🔍</span><input type="text" placeholder="Tìm kiếm..." id="record-search" oninput="renderRecords()"></div>
+    </div>
+  </div>
+  <div class="content">
+    <div class="stats-grid" id="dashboard-stats"></div>
+    <div class="card"><div id="records-list"></div></div>
+  </div>
+</div>
+
+<!-- PAGE: CATALOG -->
+<div id="page-catalog" class="page">
+  <div class="topbar">
+    <div class="topbar-left">
+      <button class="menu-btn" onclick="openSidebar()">☰</button>
+      <div><div class="page-title">🗂️ Danh mục thuốc quầy</div><div class="page-sub">Danh mục riêng của nhà thuốc</div></div>
+    </div>
+    <div class="topbar-actions">
+      <button class="theme-toggle" onclick="toggleTheme()" id="theme-btn3"><span class="toggle-icon" id="theme-icon3">🌙</span></button>
+      <button class="btn btn-outline btn-sm" onclick="document.getElementById('cat-file').click()">📥 <span class="btn-label-sm">Import</span></button>
+      <input type="file" id="cat-file" accept=".xls,.xlsx,.csv" style="display:none" onchange="importCatalog(this)">
+      <button class="btn btn-primary btn-sm" onclick="showAddDrug()">+ <span class="btn-label-sm">Thêm</span></button>
+    </div>
+  </div>
+  <div class="content">
+    <div class="info-box">💡 Khi nhập hóa đơn, ứng dụng tự động tìm mã hàng từ danh mục này. Cần có: <strong>Mã hàng, Tên thuốc, Giá bán</strong>.</div>
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px">
+        <div class="card-title" style="margin:0">Thuốc trong quầy <span id="cat-count" class="chip">0</span></div>
+        <div class="search-box"><span class="search-icon">🔍</span><input type="text" placeholder="Tìm thuốc..." id="cat-search" oninput="renderCatalog()"></div>
+      </div>
+      <div class="table-wrap"><table><thead><tr><th class="row-num">#</th><th>Mã hàng</th><th>Tên thuốc</th><th class="hide-mobile">Đơn vị</th><th>Giá bán</th><th class="hide-mobile">VAT%</th><th class="hide-tablet">Ghi chú</th><th></th></tr></thead><tbody id="catalog-body"></tbody></table></div>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE: NATIONAL -->
+<div id="page-national" class="page">
+  <div class="topbar">
+    <div class="topbar-left">
+      <button class="menu-btn" onclick="openSidebar()">☰</button>
+      <div><div class="page-title">🏥 Dược quốc gia</div><div class="page-sub">Danh mục để đối chiếu tên thuốc</div></div>
+    </div>
+    <div class="topbar-actions">
+      <button class="theme-toggle" onclick="toggleTheme()" id="theme-btn4"><span class="toggle-icon" id="theme-icon4">🌙</span></button>
+      <button class="btn btn-outline btn-sm" onclick="document.getElementById('nat-file').click()">📥 <span class="btn-label-sm">Import DQG</span></button>
+      <input type="file" id="nat-file" accept=".xls,.xlsx,.csv" style="display:none" onchange="importNational(this)">
+      <button class="btn btn-ghost btn-sm" onclick="clearNational()" title="Xóa danh mục">🗑</button>
+    </div>
+  </div>
+  <div class="content">
+    <div class="info-box">💡 Import file danh mục dược quốc gia (Excel). Cột cần có: <strong>Mã thuốc, Tên thuốc</strong> (hoặc tương tự).</div>
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px">
+        <div class="card-title" style="margin:0">Thuốc quốc gia <span id="nat-count" class="chip">0</span></div>
+        <div class="search-box"><span class="search-icon">🔍</span><input type="text" placeholder="Tìm tên/mã..." id="nat-search" oninput="natPage=0;renderNational()"></div>
+      </div>
+      <div id="nat-content"><div class="empty-state"><div class="empty-icon">🏥</div><div class="empty-title">Chưa có danh mục dược quốc gia</div><div>Nhấn "Import DQG" để tải lên</div></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE: SUPPLIERS -->
+<div id="page-suppliers" class="page">
+  <div class="topbar">
+    <div class="topbar-left">
+      <button class="menu-btn" onclick="openSidebar()">☰</button>
+      <div><div class="page-title">🏢 Nhà cung cấp</div><div class="page-sub">Quản lý danh sách nhà cung cấp</div></div>
+    </div>
+    <div class="topbar-actions">
+      <button class="theme-toggle" onclick="toggleTheme()" id="theme-btn5"><span class="toggle-icon" id="theme-icon5">🌙</span></button>
+      <button class="btn btn-primary btn-sm" onclick="showAddSupplier()">+ <span class="btn-label-sm">Thêm NCC</span></button>
+    </div>
+  </div>
+  <div class="content">
+    <div class="card">
+      <div class="table-wrap"><table><thead><tr><th class="row-num">#</th><th>Mã NCC</th><th>Tên nhà cung cấp</th><th class="hide-mobile">SĐT</th><th class="hide-tablet">Địa chỉ</th><th class="hide-tablet">Ghi chú</th><th></th></tr></thead><tbody id="supplier-body"></tbody></table></div>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE: BACKUP -->
+<div id="page-backup" class="page">
+  <div class="topbar">
+    <div class="topbar-left">
+      <button class="menu-btn" onclick="openSidebar()">☰</button>
+      <div><div class="page-title">💾 Sao lưu & Phục hồi</div><div class="page-sub">Quản lý dữ liệu cục bộ</div></div>
+    </div>
+    <div class="topbar-actions"><button class="theme-toggle" onclick="toggleTheme()" id="theme-btn6"><span class="toggle-icon" id="theme-icon6">🌙</span></button></div>
+  </div>
+  <div class="content">
+    <div class="split">
+      <div class="card"><div class="card-title">📤 Sao lưu dữ liệu</div><p style="color:var(--text3);font-size:13px;margin-bottom:14px">Xuất toàn bộ dữ liệu (phiếu nhập, danh mục, NCC) ra file JSON để lưu trữ.</p><button class="btn btn-primary" onclick="backupData()">⬇️ Tải file sao lưu</button></div>
+      <div class="card"><div class="card-title">📥 Phục hồi dữ liệu</div><p style="color:var(--text3);font-size:13px;margin-bottom:14px">Tải lại từ file sao lưu JSON. Dữ liệu hiện tại sẽ bị ghi đè.</p><button class="btn btn-outline" onclick="document.getElementById('restore-file').click()">📂 Chọn file phục hồi</button><input type="file" id="restore-file" accept=".json" style="display:none" onchange="restoreData(this)"></div>
+    </div>
+    <div class="card"><div class="card-title">📊 Thông tin lưu trữ</div><div id="storage-info"></div></div>
+    <div class="card" style="border-color:rgba(220,38,38,.3)"><div class="card-title" style="color:var(--red2)">⚠️ Vùng nguy hiểm</div><p style="color:var(--text3);font-size:13px;margin-bottom:14px">Xóa toàn bộ dữ liệu không thể phục hồi nếu chưa sao lưu.</p><button class="btn btn-danger" onclick="clearAllData()">🗑 Xóa toàn bộ dữ liệu</button></div>
+  </div>
+</div>
+
+<!-- PAGE: SETTINGS -->
+<div id="page-settings" class="page">
+  <div class="topbar">
+    <div class="topbar-left">
+      <button class="menu-btn" onclick="openSidebar()">☰</button>
+      <div><div class="page-title">⚙️ Cài đặt</div></div>
+    </div>
+    <div class="topbar-actions"><button class="theme-toggle" onclick="toggleTheme()" id="theme-btn7"><span class="toggle-icon" id="theme-icon7">🌙</span></button></div>
+  </div>
+  <div class="content">
+    <div class="card">
+      <div class="card-title">🏪 Thông tin quầy thuốc</div>
+      <div class="form-grid form-grid-2">
+        <div class="form-group"><label class="form-label">Tên quầy thuốc</label><input class="form-input" id="s-name" placeholder="Nhà thuốc ABC"></div>
+        <div class="form-group"><label class="form-label">Mã cửa hàng (VNPT)</label><input class="form-input" id="s-shopcode" placeholder="SHOP1"></div>
+        <div class="form-group"><label class="form-label">Thủ kho mặc định</label><input class="form-input" id="s-keeper" placeholder="Nguyễn Văn A"></div>
+        <div class="form-group"><label class="form-label">Mã NCC mặc định</label><input class="form-input" id="s-supplier" placeholder="Mã NCC hay dùng"></div>
+      </div>
+      <button class="btn btn-primary" onclick="saveSettings()">💾 Lưu cài đặt</button>
+    </div>
+    <div class="card">
+      <div class="card-title">🌗 Giao diện sáng / tối</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn btn-primary" id="btn-dark" onclick="setTheme('dark')">🌙 Tối</button>
+        <button class="btn btn-outline" id="btn-light" onclick="setTheme('light')">☀️ Sáng</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">🤖 AI xử lý hóa đơn (Gemini 2.5 Flash)</div>
+      <div class="info-box">Nhập <strong>Google Gemini API Key</strong> để nhận diện hóa đơn từ ảnh & PDF bằng AI. Lấy key miễn phí tại <a href="https://aistudio.google.com/apikey" target="_blank" style="color:var(--accent2)">aistudio.google.com</a>.</div>
+      <div class="form-group"><label class="form-label">Gemini API Key</label><input class="form-input" id="s-apikey" type="password" placeholder="AIza..."></div>
+      <button class="btn btn-primary" onclick="saveAPIKey()">💾 Lưu API Key</button>
+    </div>
+  </div>
+</div>
+
+</main>
+</div>
+
+<!-- MODAL: Add Drug -->
+<div class="modal-overlay" id="modal-drug">
+  <div class="modal" style="max-width:500px">
+    <div class="modal-header"><div class="modal-title" id="drug-modal-title">Thêm thuốc mới</div><button class="btn btn-ghost btn-sm" onclick="closeModal('modal-drug')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="drug-edit-idx">
+      <div class="form-group"><label class="form-label">Mã hàng *</label><input class="form-input" id="d-code" placeholder="VD: 000001"></div>
+      <div class="form-group"><label class="form-label">Tên thuốc *</label><input class="form-input" id="d-name" placeholder="Tên đầy đủ"></div>
+      <div class="form-grid form-grid-2">
+        <div class="form-group"><label class="form-label">Đơn vị tính</label><input class="form-input" id="d-unit" placeholder="VIÊN / HỘP / CHAI..."></div>
+        <div class="form-group"><label class="form-label">VAT %</label><input class="form-input" id="d-vat" type="number" placeholder="5" min="0"></div>
+        <div class="form-group"><label class="form-label">Giá bán</label><input class="form-input" id="d-price" type="number" placeholder="0" min="0"></div>
+        <div class="form-group"><label class="form-label">Ghi chú</label><input class="form-input" id="d-note"></div>
+      </div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('modal-drug')">Hủy</button><button class="btn btn-primary" onclick="saveDrug()">💾 Lưu</button></div>
+  </div>
+</div>
+
+<!-- MODAL: Supplier -->
+<div class="modal-overlay" id="modal-supplier">
+  <div class="modal" style="max-width:500px">
+    <div class="modal-header"><div class="modal-title">Nhà cung cấp</div><button class="btn btn-ghost btn-sm" onclick="closeModal('modal-supplier')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="sup-edit-idx">
+      <div class="form-group"><label class="form-label">Mã NCC *</label><input class="form-input" id="sup-code" placeholder="VD: NCC001"></div>
+      <div class="form-group"><label class="form-label">Tên nhà cung cấp *</label><input class="form-input" id="sup-name" placeholder="Công ty TNHH..."></div>
+      <div class="form-grid form-grid-2">
+        <div class="form-group"><label class="form-label">Số điện thoại</label><input class="form-input" id="sup-phone"></div>
+        <div class="form-group"><label class="form-label">Ghi chú</label><input class="form-input" id="sup-note"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Địa chỉ</label><input class="form-input" id="sup-addr"></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('modal-supplier')">Hủy</button><button class="btn btn-primary" onclick="saveSupplier()">💾 Lưu</button></div>
+  </div>
+</div>
+
+<!-- MODAL: View Record -->
+<div class="modal-overlay" id="modal-record">
+  <div class="modal" style="max-width:860px">
+    <div class="modal-header"><div class="modal-title" id="rec-modal-title">Phiếu nhập</div><button class="btn btn-ghost btn-sm" onclick="closeModal('modal-record')">✕</button></div>
+    <div class="modal-body" id="rec-modal-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-danger btn-sm" onclick="deleteRecord(currentRecordIdx)">🗑 Xóa</button>
+      <button class="btn btn-outline" onclick="closeModal('modal-record')">Đóng</button>
+      <button class="btn btn-primary" onclick="editRecord(currentRecordIdx)">✏️ Sửa</button>
+      <button class="btn btn-blue" onclick="exportRecordVNPT(currentRecordIdx)">⬇️ Xuất VNPT</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toasts"></div>
+
+<script>
+// ======================== THEME ========================
+let currentTheme = localStorage.getItem('pi_theme') || 'dark';
+function applyTheme(t) {
+  currentTheme = t;
+  document.documentElement.setAttribute('data-theme', t);
+  localStorage.setItem('pi_theme', t);
+  const isDark = t === 'dark';
+  const icon = isDark ? '🌙' : '☀️';
+  const label = isDark ? 'Tối' : 'Sáng';
+  for(let i=1;i<=7;i++) {
+    const ic = document.getElementById('theme-icon'+i); if(ic) ic.textContent=icon;
+    const lb = document.getElementById('theme-label'+i); if(lb) lb.textContent=label;
+  }
+  const bd=document.getElementById('btn-dark'), bl=document.getElementById('btn-light');
+  if(bd){bd.className='btn '+(isDark?'btn-primary':'btn-outline');bl.className='btn '+(isDark?'btn-outline':'btn-primary');}
+}
+function toggleTheme(){applyTheme(currentTheme==='dark'?'light':'dark');}
+function setTheme(t){applyTheme(t);}
+applyTheme(currentTheme);
+
+// ======================== DATA ========================
+const DB={get:(k,d)=>{try{return JSON.parse(localStorage.getItem('pi_'+k))??d}catch{return d}},set:(k,v)=>localStorage.setItem('pi_'+k,JSON.stringify(v))};
+let catalog=DB.get('catalog',[]),national=DB.get('national',[]),suppliers=DB.get('suppliers',[]),records=DB.get('records',[]),settings=DB.get('settings',{name:'',shopcode:'',keeper:'',supplier:''}),apiKey=DB.get('apikey','');
+let currentItems=[],currentRecordIdx=-1,editingRecordIdx=-1;
+
+// ======================== SIDEBAR ========================
+function openSidebar(){document.getElementById('sidebar').classList.add('open');const ov=document.getElementById('sidebar-overlay');ov.style.display='block';ov.style.pointerEvents='all';requestAnimationFrame(()=>ov.classList.add('show'));}
+function closeSidebar(){document.getElementById('sidebar').classList.remove('open');const ov=document.getElementById('sidebar-overlay');ov.classList.remove('show');setTimeout(()=>{ov.style.display='none';ov.style.pointerEvents='none';},250);}
+
+// ======================== NAVIGATION ========================
+function showPage(p){
+  document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(x=>x.classList.remove('active'));
+  const pg=document.getElementById('page-'+p);if(pg)pg.classList.add('active');
+  document.querySelectorAll(`[data-page="${p}"]`).forEach(x=>x.classList.add('active'));
+  closeSidebar();
+  if(p==='records'){renderRecords();renderStats();}
+  if(p==='catalog')renderCatalog();
+  if(p==='national')renderNational();
+  if(p==='suppliers')renderSuppliers();
+  if(p==='backup')renderStorageInfo();
+  if(p==='settings')loadSettings();
+}
+
+// ======================== TOAST ========================
+function toast(msg,type='info'){const icons={success:'✅',error:'❌',info:'ℹ️'};const t=document.createElement('div');t.className=`toast toast-${type}`;t.innerHTML=`<span>${icons[type]}</span><span>${msg}</span>`;document.getElementById('toasts').appendChild(t);setTimeout(()=>t.remove(),3500);}
+
+// ======================== MODAL ========================
+function openModal(id){document.getElementById(id).classList.add('show');}
+function closeModal(id){document.getElementById(id).classList.remove('show');}
+
+// ======================== FILE UPLOAD ========================
+const dropZone=document.getElementById('drop-zone');
+dropZone.addEventListener('dragover',e=>{e.preventDefault();dropZone.classList.add('drag');});
+dropZone.addEventListener('dragleave',()=>dropZone.classList.remove('drag'));
+dropZone.addEventListener('drop',e=>{e.preventDefault();dropZone.classList.remove('drag');handleFileUpload(e.dataTransfer.files[0]);});
+
+async function handleFileUpload(file){
+  if(!file)return;
+  showProgress(true,'Đang đọc file...');
+  const ext=file.name.split('.').pop().toLowerCase();
+  if(['xls','xlsx','csv'].includes(ext)){await parseExcelInvoice(file);}
+  else if(['png','jpg','jpeg','webp'].includes(ext)){await parseImageInvoice(file);}
+  else if(ext==='pdf'){await parsePdfInvoice(file);}
+  else{toast('Định dạng file không hỗ trợ','error');showProgress(false);}
+}
+
+async function callGeminiAI(parts){
+  const key=apiKey||DB.get('apikey','');
+  if(!key)throw new Error('NO_KEY');
+  const resp=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({contents:[{parts}]})
+  });
+  const data=await resp.json();
+  if(data.error)throw new Error(data.error.message);
+  return data.candidates?.[0]?.content?.parts?.map(p=>p.text||'').join('')||'';
+}
+
+async function parsePdfInvoice(file){
+  const key=apiKey||DB.get('apikey','');
+  if(!key){
+    toast('Không có Gemini API Key — thử trích xuất văn bản PDF...','info');
+    await parsePdfText(file);
+    return;
+  }
+  setProgress(20,'Đang đọc file PDF...');
+  const b64=await fileToBase64(file);
+  setProgress(40,'Gửi PDF đến Gemini 2.5 Flash...');
+  const catalogContext=catalog.slice(0,50).map(d=>`${d.code}: ${d.name} (${d.unit||''}, giá bán: ${d.price||0}, VAT: ${d.vat||0}%)`).join('\n');
+  const prompt=`Bạn là trợ lý nhận dạng hóa đơn dược phẩm. Trích xuất thông tin hóa đơn và toàn bộ sản phẩm từ hóa đơn PDF này.\n${catalogContext?`\nDanh mục thuốc của quầy:\n${catalogContext}`:''}\nTrả về JSON hợp lệ (không có markdown backticks):\n{"invoiceNumber":"Số hóa đơn (chỉ phần số)","invoiceSerial":"Ký hiệu hóa đơn (VD: 1C25TAA)","invoiceDate":"Ngày hóa đơn định dạng DD/MM/YYYY","items":[{"name":"Tên thuốc","lot":"Số lô","expiry":"DD/MM/YYYY","unit":"Đơn vị","qty":0,"price":0,"sellprice":0,"vat":0,"discount":0,"code":"mã hàng nếu biết"}]}`;
+  try{
+    const txt=await callGeminiAI([{inline_data:{mime_type:'application/pdf',data:b64.split(',')[1]}},{text:prompt}]);
+    setProgress(80,'Nhận kết quả...');
+    const clean=txt.replace(/```json|```/g,'').trim();
+    const parsed=JSON.parse(clean);
+    const items=(parsed.items||[]).map(it=>({...it,matched:catalog.some(d=>d.code===it.code&&it.code)}));
+    setProgress(100,'Hoàn tất!');setTimeout(()=>{showProgress(false);initImportView(items,{invoiceNumber:parsed.invoiceNumber,invoiceSerial:parsed.invoiceSerial,invoiceDate:parsed.invoiceDate});},300);
+  }catch(e){
+    showProgress(false);
+    if(e.message==='NO_KEY'){toast('Vui lòng nhập Gemini API Key trong Cài đặt','error');return;}
+    toast('AI lỗi: '+e.message+'. Thử trích xuất văn bản...','info');
+    await parsePdfText(file);
+  }
+}
+
+// Fallback: extract text from PDF using PDF.js and parse like plaintext
+async function parsePdfText(file){
+  // Dynamically load PDF.js if not already loaded
+  if(!window.pdfjsLib){
+    setProgress(10,'Tải thư viện PDF.js...');
+    await new Promise((res,rej)=>{
+      const s=document.createElement('script');
+      s.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+      s.onload=res; s.onerror=rej;
+      document.head.appendChild(s);
+    });
+    window.pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  }
+  setProgress(30,'Đọc nội dung PDF...');
+  try{
+    const buf=await file.arrayBuffer();
+    const pdf=await window.pdfjsLib.getDocument({data:buf}).promise;
+    let allText='';
+    for(let p=1;p<=pdf.numPages;p++){
+      const page=await pdf.getPage(p);
+      const tc=await page.getTextContent();
+      const lines=[];
+      let lastY=null;
+      tc.items.forEach(item=>{
+        if(lastY!==null&&Math.abs(item.transform[5]-lastY)>5)lines.push('');
+        lines.push(item.str);
+        lastY=item.transform[5];
+      });
+      allText+=lines.join(' ')+'\n';
+    }
+    setProgress(60,'Phân tích văn bản...');
+    const items=parsePlainTextInvoice(allText);
+    const invoiceInfo=extractInvoiceInfo(allText);
+    setProgress(100,'Xong!');
+    setTimeout(()=>{showProgress(false);initImportView(items,invoiceInfo);},300);
+    if(!items.length)toast('Không trích xuất được sản phẩm từ PDF. Thử nhập API Key để dùng AI.','error');
+  }catch(e){showProgress(false);toast('Lỗi đọc PDF: '+e.message,'error');}
+}
+
+// Dò tìm ký hiệu, số hóa đơn & ngày hóa đơn trong văn bản trích xuất từ PDF (fallback không dùng AI)
+function extractInvoiceInfo(text){
+  const info={invoiceNumber:'',invoiceSerial:'',invoiceDate:''};
+  const serialM=text.match(/(?:ký\s*hiệu|serial)[\s:.#]*([A-Za-z0-9]{6,12})/i);
+  if(serialM)info.invoiceSerial=serialM[1].trim();
+  const numM=text.match(/(?:số\s*(?:hóa\s*đơn|hđ)|invoice\s*(?:no|number)?)[\s:.#]*(\d{1,10})/i)
+    || text.match(/(?:no\.?|№)\s*[:.#]?\s*(\d{4,10})\b/i);
+  if(numM)info.invoiceNumber=numM[1].trim();
+  const dateM=text.match(/(?:ngày\s*(?:hóa\s*đơn|hđ)?)[\s:.#]*(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/i)
+    || text.match(/ngày\s*(\d{1,2})\s*tháng\s*(\d{1,2})\s*năm\s*(\d{4})/i);
+  if(dateM)info.invoiceDate=`${dateM[1].padStart(2,'0')}/${dateM[2].padStart(2,'0')}/${dateM[3].length===2?'20'+dateM[3]:dateM[3]}`;
+  return info;
+}
+
+// Simple regex-based invoice row parser for plain text
+function parsePlainTextInvoice(text){
+  const items=[];
+  const lines=text.split(/\n/).map(l=>l.trim()).filter(l=>l);
+  // Try to find rows with: number, name, lot, expiry, qty, price pattern
+  const rowRe=/^\d+[\.\)]\s+(.+)/;
+  const qtyPriceRe=/(\d[\d\s,.]+)\s+(\d[\d\s,.]+)\s*$/;
+  for(let i=0;i<lines.length;i++){
+    const m=lines[i].match(rowRe);
+    if(!m)continue;
+    const raw=m[1];
+    // Try to extract qty & price from end of line
+    const qp=raw.match(/(\d+(?:[.,]\d+)?)\s+(\d[\d.,]+)\s*$/);
+    const qty=qp?parseFloat(qp[1].replace(',','.'))||1:1;
+    const price=qp?parseFloat(qp[2].replace(/\./g,'').replace(',','.'))||0:0;
+    // Name = everything before the numbers at end
+    const name=(qp?raw.slice(0,raw.lastIndexOf(qp[0])):raw).trim();
+    if(!name||name.length<2)continue;
+    // Try lot / expiry from next line or inline
+    let lot='',expiry='';
+    const lotM=raw.match(/[Ll]ô[:\s]+([A-Z0-9\-]+)/i)||lines[i+1]?.match(/[Ll]ô[:\s]+([A-Z0-9\-]+)/i);
+    if(lotM)lot=lotM[1];
+    const expM=raw.match(/(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/)||lines[i+1]?.match(/(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/);
+    if(expM)expiry=expM[1];
+    const matched=findDrug(name);
+    items.push({name,lot,expiry,unit:matched?.unit||'',qty,price,sellprice:matched?.price||0,vat:matched?.vat||5,discount:0,code:matched?.code||'',matched:!!matched});
+  }
+  return items;
+}
+function showProgress(show,msg='',pct=0){const el=document.getElementById('upload-progress');el.style.display=show?'block':'none';if(show){document.getElementById('prog-fill').style.width=pct+'%';document.getElementById('prog-text').textContent=msg;}}
+async function parseExcelInvoice(file){
+  const buf=await file.arrayBuffer();setProgress(30,'Phân tích Excel...');
+  const wb=XLSX.read(buf,{type:'array',cellDates:true});
+  const ws=wb.Sheets[wb.SheetNames[0]];
+  const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+  let headerRow=-1,colMap={};
+  for(let i=0;i<Math.min(rows.length,10);i++){
+    const r=rows[i].map(c=>String(c).toLowerCase());
+    if(r.some(c=>c.includes('tên')&&(c.includes('hàng')||c.includes('thuốc')||c.includes('dịch')))){
+      headerRow=i;
+      r.forEach((c,j)=>{
+        if(c.includes('stt'))colMap.stt=j;
+        else if(c.includes('tên'))colMap.name=j;
+        else if(c.includes('số lô')||c.includes('lô sx')||c.includes('lô'))colMap.lot=j;
+        else if(c.includes('hạn')||c.includes('hsd')||c.includes('date'))colMap.expiry=j;
+        else if(c.includes('đơn vị')||c.includes('dvt')||c.includes('unit'))colMap.unit=j;
+        else if(c.includes('số lượng')||c.includes('sl')||c.includes('qty'))colMap.qty=j;
+        else if((c.includes('đơn giá')||c.includes('giá')||c.includes('price'))&&colMap.price===undefined)colMap.price=j;
+        else if(c.includes('thành tiền')||c.includes('total'))colMap.total=j;
+        else if(c.includes('thuế')||c.includes('vat'))colMap.vat=j;
+        else if(c.includes('chiết khấu')||c.includes('ck'))colMap.discount=j;
+      });break;
+    }
+  }
+  setProgress(60,'Nhận diện sản phẩm...');
+  const items=[];const dataStart=headerRow+1;
+  for(let i=dataStart;i<rows.length;i++){
+    const r=rows[i];const nameRaw=r[colMap.name??1];if(!nameRaw||String(nameRaw).trim()==='')continue;
+    const name=String(nameRaw).trim();
+    const qty=parseFloat(String(r[colMap.qty??5]).replace(/[.,\s]/g,'').replace(',','.'))||0;
+    if(qty===0&&i>dataStart+1)continue;
+    const price=parseFloat(String(r[colMap.price??6]).replace(/\./g,'').replace(',','.'))||0;
+    const vat=parseFloat(String(r[colMap.vat??8]).replace(',','.'))||0;
+    const disc=parseFloat(String(r[colMap.discount??9]).replace(',','.'))||0;
+    let expiry=r[colMap.expiry??3];if(expiry instanceof Date)expiry=fmtDateInput(expiry);else expiry=String(expiry||'');
+    const lot=String(r[colMap.lot??2]||'').trim();const unit=String(r[colMap.unit??4]||'').trim();
+    const matched=findDrug(name);
+    items.push({name,lot,expiry,unit:matched?.unit||unit,qty,price,sellprice:matched?.price||0,vat:matched?.vat||vat,discount:disc,code:matched?.code||'',matched:!!(matched?.code),matchSrc:matched?._fromNational?'nat':matched?'cat':''});
+  }
+  setProgress(90,'Hoàn tất...');
+  setTimeout(()=>{showProgress(false);initImportView(items);},300);
+}
+async function parseImageInvoice(file){
+  const key=apiKey||DB.get('apikey','');
+  if(!key){toast('Vui lòng nhập Gemini API Key trong Cài đặt để xử lý ảnh','error');showProgress(false);return;}
+  setProgress(20,'Đang mã hóa ảnh...');const b64=await fileToBase64(file);setProgress(40,'Gửi ảnh đến Gemini 2.5 Flash...');
+  const catalogContext=catalog.slice(0,50).map(d=>`${d.code}: ${d.name} (${d.unit||''}, giá bán: ${d.price||0}, VAT: ${d.vat||0}%)`).join('\n');
+  const prompt=`Bạn là trợ lý nhận dạng hóa đơn dược phẩm. Trích xuất thông tin hóa đơn và toàn bộ sản phẩm.\n${catalogContext?`\nDanh mục:\n${catalogContext}`:''}\nTrả về JSON hợp lệ (không markdown):\n{"invoiceNumber":"Số hóa đơn (chỉ phần số)","invoiceSerial":"Ký hiệu hóa đơn (VD: 1C25TAA)","invoiceDate":"Ngày hóa đơn định dạng DD/MM/YYYY","items":[{"name":"","lot":"","expiry":"DD/MM/YYYY","unit":"","qty":0,"price":0,"sellprice":0,"vat":0,"discount":0,"code":""}]}`;
+  try{
+    const txt=await callGeminiAI([{inline_data:{mime_type:file.type||'image/jpeg',data:b64.split(',')[1]}},{text:prompt}]);
+    setProgress(80,'Nhận kết quả...');
+    const clean=txt.replace(/```json|```/g,'').trim();
+    const parsed=JSON.parse(clean);
+    const items=(parsed.items||[]).map(it=>({...it,matched:catalog.some(d=>d.code===it.code&&it.code)}));
+    setProgress(100,'Hoàn tất!');setTimeout(()=>{showProgress(false);initImportView(items,{invoiceNumber:parsed.invoiceNumber,invoiceSerial:parsed.invoiceSerial,invoiceDate:parsed.invoiceDate});},300);
+  }catch(e){showProgress(false);toast('Lỗi AI: '+e.message,'error');}
+}
+function fileToBase64(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(file);});}
+function setProgress(pct,msg){document.getElementById('prog-fill').style.width=pct+'%';document.getElementById('prog-text').textContent=msg;}
+
+// ======= DRUG MATCHING =======
+function extractCoreName(s){
+  return normalize(s)
+    .replace(/\d+[.,]?\d*\s*(mg|mcg|ug|g|ml|l|iu|ui|%|mmol|meq)(\/\d+[.,]?\d*\s*(mg|mcg|g|ml|l|iu|ui|%))?/gi,'')
+    .replace(/\b(vien|hop|chai|ong|goi|tube|tuyp|lo|bich|vi|tui|siro|syrup|tablet|capsule|injection|amp|ampul|nang|bot|kem|gel|dung dich|vien nen|vien nang)\b/gi,'')
+    .replace(/\s+/g,' ').trim();
+}
+
+function scoreDrug(candidateName, queryName){
+  const cn=normalize(candidateName), qn=normalize(queryName);
+  const cc=extractCoreName(candidateName), qc=extractCoreName(queryName);
+  if(cn===qn) return 100;
+  if(cc===qc && cc.length>1) return 95;
+  if(cn.startsWith(qn)||qn.startsWith(cn)) return 88;
+  if(cc.startsWith(qc)||qc.startsWith(cc)) return 83;
+  if(cn.includes(qn)||qn.includes(cn)) return 75;
+  if(cc.includes(qc)||qc.includes(cc)) return 70;
+  // Token overlap — đếm từ chung có ý nghĩa (>= 2 ký tự)
+  const ta=cn.split(' ').filter(w=>w.length>=2);
+  const tb=qn.split(' ').filter(w=>w.length>=2);
+  const setB=new Set(tb);
+  const inter=ta.filter(w=>setB.has(w));
+  if(inter.length>=1){
+    // Bonus nếu từ đầu tiên (tên hoạt chất/biệt dược) trùng
+    const firstMatch=ta[0]&&tb[0]&&(ta[0]===tb[0]||ta[0].startsWith(tb[0])||tb[0].startsWith(ta[0]));
+    const ratio=inter.length/Math.max(ta.length,tb.length,1);
+    const base=Math.round(35+ratio*45);
+    return firstMatch?Math.min(base+15,90):base;
+  }
+  return 0;
+}
+
+function findDrug(name){
+  if(!name||name.trim()==='')return null;
+
+  // 1. Danh mục quầy — ưu tiên tuyệt đối (có mã + giá bán đầy đủ)
+  let bestCatScore=0, bestCat=null;
+  for(const d of catalog){
+    const s=scoreDrug(d.name,name);
+    if(s>bestCatScore){bestCatScore=s;bestCat=d;}
+  }
+  // Ngưỡng thấp — chỉ cần có 1 từ quan trọng trùng (score >= 35)
+  if(bestCatScore>=35) return {...bestCat, _fromNational:false};
+
+  // 2. Dược quốc gia
+  let bestNatScore=0, bestNat=null;
+  for(const d of national){
+    const s=scoreDrug(d.name,name);
+    if(s>bestNatScore){bestNatScore=s;bestNat=d;}
+  }
+  if(bestNatScore>=35 && bestNat){
+    // Thử tra lại catalog bằng tên chuẩn DQG
+    let crossScore=0, crossMatch=null;
+    for(const d of catalog){
+      const s=scoreDrug(d.name,bestNat.name);
+      if(s>crossScore){crossScore=s;crossMatch=d;}
+    }
+    if(crossScore>=35) return {...crossMatch, _fromNational:false};
+    return {code:bestNat.code||'',name:bestNat.name,unit:'',price:0,vat:0,_fromNational:true};
+  }
+
+  return null;
+}
+
+function normalize(s){return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9 ]/g,'').replace(/\s+/g,' ').trim();}
+
+// ======= RE-MATCH & AI MATCH =======
+function rematchAll(){
+  let fixed=0;
+  currentItems.forEach((it,i)=>{
+    const m=findDrug(it.name);
+    if(m && m.code && m.code!==it.code){
+      currentItems[i].code=m.code;
+      currentItems[i].matchSrc=m._fromNational?'nat':'cat';
+      currentItems[i].matched=true;
+      if(m.unit&&!it.unit)currentItems[i].unit=m.unit;
+      if(m.price&&!it.sellprice)currentItems[i].sellprice=m.price;
+      if(m.vat&&!it.vat)currentItems[i].vat=m.vat;
+      fixed++;
+    } else if(m && !it.code){
+      // có match nhưng không có mã → điền tên chuẩn
+      currentItems[i].matchSrc=m._fromNational?'nat':'cat';
+    }
+  });
+  renderItemsTable();
+  toast(fixed>0?`Dò lại xong! Cập nhật ${fixed} sản phẩm`:'Không có thêm mã nào mới','info');
+}
+
+async function aiMatchAll(){
+  const key=apiKey||DB.get('apikey','');
+  if(!key){toast('Vui lòng nhập Gemini API Key trong Cài đặt','error');return;}
+  const unmatched=currentItems.filter(it=>!it.code);
+  if(!unmatched.length){toast('Tất cả sản phẩm đã có mã hàng!','success');return;}
+
+  const btn=document.getElementById('btn-ai-match');
+  btn.disabled=true;btn.textContent='⏳ Đang dò...';
+
+  // Build compact catalog context
+  const catLines=catalog.map(d=>`${d.code}|${d.name}|${d.unit||''}|${d.price||0}|${d.vat||0}`).join('\n');
+  const natLines=national.slice(0,2000).map(d=>`${d.code||''}|${d.name}`).join('\n');
+  const itemLines=unmatched.map((it,i)=>`${i+1}. ${it.name}`).join('\n');
+
+  const prompt=`Bạn là trợ lý dược phẩm. Hãy dò mã hàng cho các sản phẩm dưới đây bằng cách đối chiếu với danh mục.
+
+DANH MỤC QUẦY (mã|tên|đvt|giá bán|vat):
+${catLines||'(trống)'}
+
+DANH MỤC DƯỢC QUỐC GIA (mã|tên):
+${natLines||'(trống)'}
+
+SẢN PHẨM CẦN DÒ MÃ:
+${itemLines}
+
+Quy tắc:
+- Ưu tiên khớp danh mục quầy (có mã + giá bán đầy đủ hơn)
+- Nếu không có trong danh mục quầy thì dùng mã DQG
+- Cho phép khớp mờ: bỏ qua hàm lượng, dạng bào chế, viết tắt
+- Nếu không tìm được thì để code rỗng ""
+
+Trả về JSON (không markdown):
+{"results":[{"idx":1,"code":"mã hàng","name":"tên chuẩn trong danh mục","unit":"","price":0,"vat":0,"src":"cat hoặc nat hoặc"}]}`;
+
+  try{
+    const txt=await callGeminiAI([{text:prompt}]);
+    const clean=txt.replace(/\`\`\`json|\`\`\`/g,'').trim();
+    const parsed=JSON.parse(clean);
+    let fixed=0;
+    (parsed.results||[]).forEach(r=>{
+      if(!r.code)return;
+      const it=unmatched[r.idx-1];
+      if(!it)return;
+      const realIdx=currentItems.indexOf(it);
+      if(realIdx<0)return;
+      currentItems[realIdx].code=r.code;
+      currentItems[realIdx].matchSrc=r.src||'ai';
+      currentItems[realIdx].matched=true;
+      if(r.unit&&!currentItems[realIdx].unit)currentItems[realIdx].unit=r.unit;
+      if(r.price&&!currentItems[realIdx].sellprice)currentItems[realIdx].sellprice=r.price;
+      if(r.vat&&!currentItems[realIdx].vat)currentItems[realIdx].vat=r.vat;
+      fixed++;
+    });
+    renderItemsTable();
+    toast(`AI dò xong! Tìm được mã cho ${fixed}/${unmatched.length} sản phẩm`,'success');
+  }catch(e){
+    toast('Lỗi AI: '+e.message,'error');
+  }finally{
+    btn.disabled=false;btn.innerHTML='🤖 <span class="btn-label-sm">Dò mã AI</span>';
+  }
+}
+
+function initImportView(items,invoiceInfo){
+  currentItems=items;
+  if(editingRecordIdx>=0){editingRecordIdx=-1;setEditModeUI(false);}
+  document.getElementById('invoice-section').style.display='';
+  document.getElementById('items-section').style.display='';
+  document.getElementById('btn-save').disabled=false;
+  document.getElementById('btn-export').disabled=false;
+  const today=new Date().toISOString().split('T')[0];
+  document.getElementById('inp-date').value=today;
+  document.getElementById('inp-code').value=Date.now().toString().slice(-8);
+  document.getElementById('inp-keeper').value=settings.keeper||'';
+  document.getElementById('inp-warehouse').value=settings.shopcode||'';
+  document.getElementById('inp-supplier').value=settings.supplier||'';
+  // Tự động điền Ký hiệu / Số hóa đơn / Ngày hóa đơn nếu trích xuất được từ file PDF/ảnh
+  if(invoiceInfo){
+    if(invoiceInfo.invoiceSerial)document.getElementById('inp-invoice-serial').value=invoiceInfo.invoiceSerial;
+    if(invoiceInfo.invoiceNumber)document.getElementById('inp-invoice-num').value=invoiceInfo.invoiceNumber;
+    if(invoiceInfo.invoiceDate){
+      const iso=vnDateToISO(invoiceInfo.invoiceDate);
+      if(iso)document.getElementById('inp-invoice-date').value=iso;
+    }
+  }
+  renderItemsTable();
+  const infoMsg=(invoiceInfo&&(invoiceInfo.invoiceSerial||invoiceInfo.invoiceNumber||invoiceInfo.invoiceDate))?' (đã tự nhận thông tin hóa đơn)':'';
+  toast('Đọc xong! '+items.length+' sản phẩm'+infoMsg,'success');
+}
+// Chuyển dd/mm/yyyy -> yyyy-mm-dd để gán vào input type="date"
+function vnDateToISO(s){
+  const m=String(s).trim().match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
+  if(!m)return'';
+  const yyyy=m[3].length===2?'20'+m[3]:m[3];
+  return `${yyyy}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+}
+function renderItemsTable(){
+  const tbody=document.getElementById('items-body');tbody.innerHTML='';
+  let total=0,hasUnmatched=false;
+  currentItems.forEach((it,i)=>{
+    const amt=(it.qty||0)*(it.price||0)*(1+(it.vat||0)/100)*(1-(it.discount||0)/100);total+=amt;
+    if(!it.code)hasUnmatched=true;
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td class="row-num">${i+1}</td>
+      <td><div class="autocomplete-wrap"><input class="form-input" style="min-width:150px;font-size:12px;padding:6px 8px" value="${esc(it.name)}" onchange="updateItem(${i},'name',this.value)" oninput="showDrugAC(${i},this)"><div class="autocomplete-list" id="ac-${i}" style="display:none"></div></div>${it.code && it.matchSrc==='cat'
+  ? `<div class="drug-match" style="font-size:10.5px">✓ <strong>${it.code}</strong> <span style="opacity:.65">(quầy)</span></div>`
+  : it.code && it.matchSrc==='nat'
+  ? `<div style="font-size:10.5px;color:var(--blue2);font-weight:600">✓ <strong>${it.code}</strong> <span style="opacity:.65">(DQG)</span></div>`
+  : it.code && it.matchSrc==='ai'
+  ? `<div style="font-size:10.5px;color:var(--orange2);font-weight:600">🤖 <strong>${it.code}</strong> <span style="opacity:.65">(AI)</span></div>`
+  : it.code
+  ? `<div class="drug-match" style="font-size:10.5px">✓ ${it.code}</div>`
+  : `<div class="drug-nomatch">⚠ Chưa có mã</div>`}</td>
+      <td><input class="form-input td-mono" style="width:88px;font-size:12px;padding:6px 8px" value="${esc(it.code)}" onchange="updateItem(${i},'code',this.value)" placeholder="Mã hàng"></td>
+      <td class="hide-mobile"><input class="form-input" style="width:66px;font-size:12px;padding:6px 8px" value="${esc(it.unit)}" onchange="updateItem(${i},'unit',this.value)"></td>
+      <td class="hide-mobile"><input class="form-input td-mono" style="width:78px;font-size:12px;padding:6px 8px" value="${esc(it.lot)}" onchange="updateItem(${i},'lot',this.value)"></td>
+      <td><input class="form-input" style="width:96px;font-size:12px;padding:6px 8px" value="${esc(it.expiry)}" onchange="updateItem(${i},'expiry',this.value)" placeholder="DD/MM/YYYY"></td>
+      <td><input class="form-input td-mono" style="width:66px;font-size:12px;padding:6px 8px;text-align:right" type="number" value="${it.qty||0}" onchange="updateItem(${i},'qty',this.value)" min="0"></td>
+      <td><input class="form-input td-mono" style="width:96px;font-size:12px;padding:6px 8px;text-align:right" type="number" value="${it.price||0}" onchange="updateItem(${i},'price',this.value)" step="0.01"></td>
+      <td class="hide-tablet"><input class="form-input td-mono" style="width:88px;font-size:12px;padding:6px 8px;text-align:right" type="number" value="${it.sellprice||0}" onchange="updateItem(${i},'sellprice',this.value)"></td>
+      <td class="hide-mobile"><input class="form-input" style="width:52px;font-size:12px;padding:6px 8px;text-align:right" type="number" value="${it.vat||0}" onchange="updateItem(${i},'vat',this.value)" min="0"></td>
+      <td class="hide-tablet"><input class="form-input" style="width:52px;font-size:12px;padding:6px 8px;text-align:right" type="number" value="${it.discount||0}" onchange="updateItem(${i},'discount',this.value)" min="0"></td>
+      <td class="td-mono" style="text-align:right;color:var(--accent2);font-weight:700;white-space:nowrap" id="amt-${i}">${fmtNum(amt)}</td>
+      <td><span class="delete-row" onclick="removeRow(${i})">✕</span></td>`;
+    tbody.appendChild(tr);
+  });
+  document.getElementById('total-cell').textContent=fmtNum(total);
+  document.getElementById('items-stats').textContent=`${currentItems.length} dòng`;
+  document.getElementById('match-warning').style.display=hasUnmatched?'':'none';
+  updateRecordCount();
+}
+function updateItem(i,field,val){
+  if(['qty','price','sellprice','vat','discount'].includes(field))val=parseFloat(val)||0;
+  currentItems[i][field]=val;const it=currentItems[i];
+  const amt=(it.qty||0)*(it.price||0)*(1+(it.vat||0)/100)*(1-(it.discount||0)/100);
+  const el=document.getElementById('amt-'+i);if(el)el.textContent=fmtNum(amt);
+  let total=0;currentItems.forEach(x=>total+=(x.qty||0)*(x.price||0)*(1+(x.vat||0)/100)*(1-(x.discount||0)/100));
+  document.getElementById('total-cell').textContent=fmtNum(total);
+}
+function addRow(){currentItems.push({name:'',code:'',unit:'',lot:'',expiry:'',qty:0,price:0,sellprice:0,vat:5,discount:0,matched:false,matchSrc:''});renderItemsTable();}
+function removeRow(i){currentItems.splice(i,1);renderItemsTable();}
+function clearImport(){currentItems=[];document.getElementById('invoice-section').style.display='none';document.getElementById('items-section').style.display='none';document.getElementById('btn-save').disabled=true;document.getElementById('btn-export').disabled=true;document.getElementById('file-input').value='';showProgress(false);if(editingRecordIdx>=0){editingRecordIdx=-1;setEditModeUI(false);}}
+function showDrugAC(idx,input){
+  const q=normalize(input.value);const ac=document.getElementById('ac-'+idx);
+  if(!q||q.length<2){ac.style.display='none';return;}
+  const hits=[...catalog,...national].filter(d=>normalize(d.name).includes(q)).slice(0,8);
+  if(!hits.length){ac.style.display='none';return;}
+  // label catalog vs national in autocomplete
+  const catSet=new Set(catalog.map(d=>d.name));
+  ac.innerHTML=hits.map(d=>{
+    const src=catSet.has(d.name)?'cat':'nat';
+    const srcLabel=src==='cat'?'<span style="color:var(--accent2);font-size:10px;margin-left:4px">[quầy]</span>':'<span style="color:var(--blue2);font-size:10px;margin-left:4px">[DQG]</span>';
+    return `<div class="autocomplete-item" onclick="selectDrugAC(${idx},'${esc(d.name)}','${esc(d.code||'')}','${esc(d.unit||'')}',${d.price||0},${d.vat||0},'${src}')"><span class="drug-code">${d.code||'—'}</span>${d.name}${d.unit?' ('+d.unit+')':''}${srcLabel}</div>`;
+  }).join('');
+  ac.style.display='';setTimeout(()=>document.addEventListener('click',function h(e){if(!ac.contains(e.target)){ac.style.display='none';document.removeEventListener('click',h);}},100));
+}
+function selectDrugAC(idx,name,code,unit,price,vat,src){currentItems[idx].name=name;currentItems[idx].code=code;if(unit)currentItems[idx].unit=unit;if(price)currentItems[idx].sellprice=price;if(vat)currentItems[idx].vat=vat;currentItems[idx].matched=!!code;currentItems[idx].matchSrc=src||'';renderItemsTable();document.getElementById('ac-'+idx).style.display='none';}
+
+function getFormData(){return{date:document.getElementById('inp-date').value,code:document.getElementById('inp-code').value,invoiceSerial:document.getElementById('inp-invoice-serial').value,invoiceNum:document.getElementById('inp-invoice-num').value,invoiceDate:document.getElementById('inp-invoice-date').value,keeper:document.getElementById('inp-keeper').value,warehouse:document.getElementById('inp-warehouse').value,supplier:document.getElementById('inp-supplier').value,discount:document.getElementById('inp-discount').value,paid:document.getElementById('inp-paid').value,deliverer:document.getElementById('inp-deliverer').value,transport:document.getElementById('inp-transport').value,note:document.getElementById('inp-note').value};}
+function editRecord(idx){
+  const r=records[idx];if(!r)return;
+  editingRecordIdx=idx;
+  closeModal('modal-record');
+  showPage('import');
+  currentItems=(r.items||[]).map(it=>({...it}));
+  document.getElementById('invoice-section').style.display='';
+  document.getElementById('items-section').style.display='';
+  document.getElementById('btn-save').disabled=false;
+  document.getElementById('btn-export').disabled=false;
+  document.getElementById('inp-date').value=r.date||'';
+  document.getElementById('inp-code').value=r.code||'';
+  document.getElementById('inp-invoice-serial').value=r.invoiceSerial||'';
+  document.getElementById('inp-invoice-num').value=r.invoiceNum||'';
+  document.getElementById('inp-invoice-date').value=r.invoiceDate||'';
+  document.getElementById('inp-keeper').value=r.keeper||'';
+  document.getElementById('inp-warehouse').value=r.warehouse||'';
+  document.getElementById('inp-supplier').value=r.supplier||'';
+  document.getElementById('inp-discount').value=r.discount||'';
+  document.getElementById('inp-paid').value=r.paid||'';
+  document.getElementById('inp-deliverer').value=r.deliverer||'';
+  document.getElementById('inp-transport').value=r.transport||'';
+  document.getElementById('inp-note').value=r.note||'';
+  renderItemsTable();
+  setEditModeUI(true);
+  toast('Đang sửa phiếu nhập '+(r.code||''),'info');
+}
+function cancelEditRecord(){editingRecordIdx=-1;clearImport();setEditModeUI(false);}
+function setEditModeUI(on){
+  document.getElementById('btn-save').innerHTML=on?'💾 <span class="btn-label-sm">Cập nhật</span>':'💾 <span class="btn-label-sm">Lưu</span>';
+  const cancelBtn=document.getElementById('btn-cancel-edit');
+  if(cancelBtn)cancelBtn.style.display=on?'':'none';
+}
+function saveRecord(){
+  const form=getFormData();
+  if(!form.date||!form.keeper||!form.warehouse){toast('Vui lòng điền đầy đủ thông tin bắt buộc (*)','error');return;}
+  if(editingRecordIdx>=0 && records[editingRecordIdx]){
+    const prevSavedAt=records[editingRecordIdx].savedAt;
+    records[editingRecordIdx]={...form,items:[...currentItems],savedAt:prevSavedAt,updatedAt:new Date().toISOString()};
+    DB.set('records',records);
+    updateRecordCount();
+    toast('Đã cập nhật phiếu nhập!','success');
+    editingRecordIdx=-1;
+    setEditModeUI(false);
+    clearImport();
+    showPage('records');
+    return;
+  }
+  const record={...form,items:[...currentItems],savedAt:new Date().toISOString()};records.unshift(record);DB.set('records',records);updateRecordCount();toast('Đã lưu phiếu nhập!','success');
+}
+function exportVNPT(){const form=getFormData();const wb=buildVNPTWorkbook(form,currentItems);XLSX.writeFile(wb,`phieunhap_${form.code||'export'}_${form.date||'today'}.xls`,{bookType:'xls'});toast('Đã xuất file Excel VNPT (.xls)!','success');}
+function exportRecordVNPT(idx){const rec=records[idx];if(!rec)return;const wb=buildVNPTWorkbook(rec,rec.items||[]);XLSX.writeFile(wb,`phieunhap_${rec.code||idx}_${rec.date||'export'}.xls`,{bookType:'xls'});toast('Đã xuất file Excel VNPT (.xls)!','success');}
+function buildVNPTWorkbook(form,items){
+  const wb=XLSX.utils.book_new();
+  const s1H=['STT','Ngày nhập *','Mã phiếu nhập *','Ngày hóa đơn','Số hóa đơn','Ký hiệu hóa đơn','Thủ kho nhập *','Mã kho nhập *','Chiết khấu (%)','Mã nhà cung cấp (***) ','Phương tiện vận chuyển','Đơn vị vận chuyển','Người giao hàng','Thực trả NCC (***) ','Ghi chú'];
+  const s1R=[1,toVNDate(form.date),form.code,toVNDate(form.invoiceDate)||'',form.invoiceNum||'',form.invoiceSerial||'',form.keeper,form.warehouse,form.discount||'',form.supplier||'',form.transport||'','',form.deliverer||'',form.paid||'',form.note||''];
+  const ws1=XLSX.utils.aoa_to_sheet([s1H,s1R]);ws1['!cols']=s1H.map((_,i)=>({wch:[5,14,16,14,14,14,18,14,12,18,18,16,16,16,20][i]||14}));
+  XLSX.utils.book_append_sheet(wb,ws1,'Thông tin phiếu nhập');
+  const s2H=['STT *','Mã phiếu nhập *','Mã hàng *','Tên hàng ','Đơn vị tính ','Giá nhập *','Giá bán *','Số lượng *','VAT (%)','Chiết khấu (%)','Lô SX **','Ngày HH **','Vị trí'];
+  const s2R=items.map((it,i)=>[i+1,form.code,it.code||'',it.name,it.unit||'',parseFloat(it.price)||0,parseInt(it.sellprice)||0,parseInt(it.qty)||0,parseFloat(it.vat)||0,parseFloat(it.discount)||0,it.lot||'',convertExpiryDate(it.expiry),'']);
+  const ws2=XLSX.utils.aoa_to_sheet([s2H,...s2R]);ws2['!cols']=[5,16,12,30,10,12,10,10,8,10,12,14,10].map(w=>({wch:w}));
+  XLSX.utils.book_append_sheet(wb,ws2,'Danh sách hàng nhập');
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([['STT','Dữ liệu','Mô tả'],[1,'*','Các trường bắt buộc nhập'],[2,'**','Không bắt buộc: Cần nhập nếu liên thông dược quốc gia'],[3,'Kho nhập','Mã cửa hàng có kho cần nhập'],[4,'Nhà cung cấp','Nhập mã nhà cung cấp'],[5,'Mã phiếu nhập','Hàng nhập map với phiếu nhập qua trường này'],[6,'Giá bán','Không nhập số thập phân'],[7,'Giá nhập','Chỉ được nhập 2 số thập phân']]),'Hướng dẫn');
+  return wb;
+}
+function convertExpiryDate(s){if(!s)return'';const m=s.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);if(m)return`${m[1].padStart(2,'0')}/${m[2].padStart(2,'0')}/${m[3]}`;const m2=s.match(/(\d{4})[\/\-](\d{2})[\/\-](\d{2})/);if(m2)return`${m2[3]}/${m2[2]}/${m2[1]}`;return s;}
+// Chuyển mọi định dạng ngày về dd/mm/yyyy (kiểu Việt Nam) để xuất Excel
+function toVNDate(s){
+  if(!s)return'';
+  const str=String(s).trim();
+  // yyyy-mm-dd (input type=date) hoặc yyyy/mm/dd
+  let m=str.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/);
+  if(m)return`${m[3].padStart(2,'0')}/${m[2].padStart(2,'0')}/${m[1]}`;
+  // dd/mm/yyyy hoặc dd-mm-yyyy đã đúng thứ tự
+  m=str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
+  if(m)return`${m[1].padStart(2,'0')}/${m[2].padStart(2,'0')}/${m[3].length===2?'20'+m[3]:m[3]}`;
+  return str;
+}
+
+function renderRecords(){
+  const q=normalize(document.getElementById('record-search')?.value||'');const list=document.getElementById('records-list');
+  const filtered=records.filter(r=>!q||normalize(r.code).includes(q)||normalize(r.keeper).includes(q));
+  if(!filtered.length){list.innerHTML=`<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">Chưa có phiếu nhập nào</div><div>Hãy nhập hóa đơn đầu tiên!</div></div>`;return;}
+  list.innerHTML=filtered.map(r=>{const total=(r.items||[]).reduce((s,it)=>s+(it.qty||0)*(it.price||0)*(1+(it.vat||0)/100)*(1-(it.discount||0)/100),0);const ri=records.indexOf(r);return`<div class="record-item" onclick="viewRecord(${ri})"><div class="record-info"><div class="record-num">📋 <strong>${r.code||'—'}</strong></div><div class="record-date">📅 ${r.date||'—'} &nbsp;·&nbsp; 👤 ${r.keeper||'—'} &nbsp;·&nbsp; 🏪 ${r.warehouse||'—'} &nbsp;·&nbsp; 💊 ${(r.items||[]).length} sp</div></div><div style="text-align:right;margin-right:10px;flex-shrink:0"><div class="record-amount">${fmtNum(total)}</div><div style="font-size:10.5px;color:var(--text3)">VNĐ</div></div><button class="btn btn-outline btn-xs hide-mobile" onclick="event.stopPropagation();editRecord(${ri})">✏️ Sửa</button> <button class="btn btn-outline btn-xs hide-mobile" onclick="event.stopPropagation();exportRecordVNPT(${ri})">⬇️ Xuất</button></div>`;}).join('');
+}
+function renderStats(){
+  const c=document.getElementById('dashboard-stats');const total=records.reduce((s,r)=>s+(r.items||[]).reduce((ss,it)=>ss+(it.qty||0)*(it.price||0)*(1+(it.vat||0)/100)*(1-(it.discount||0)/100),0),0);const items=records.reduce((s,r)=>s+(r.items||[]).length,0);
+  c.innerHTML=`<div class="stat-card stat-blue"><div class="stat-label">Tổng phiếu</div><div class="stat-value">${records.length}</div><div class="stat-change">phiếu nhập</div></div><div class="stat-card stat-green"><div class="stat-label">Tổng tiền</div><div class="stat-value">${fmtNum(total/1000000)}M</div><div class="stat-change">VNĐ</div></div><div class="stat-card stat-orange"><div class="stat-label">Số SP</div><div class="stat-value">${items}</div><div class="stat-change">dòng hàng</div></div><div class="stat-card"><div class="stat-label">Danh mục</div><div class="stat-value" style="color:var(--text2)">${catalog.length}</div><div class="stat-change">thuốc quầy</div></div>`;
+}
+function viewRecord(idx){
+  currentRecordIdx=idx;const r=records[idx];const total=(r.items||[]).reduce((s,it)=>s+(it.qty||0)*(it.price||0)*(1+(it.vat||0)/100)*(1-(it.discount||0)/100),0);
+  document.getElementById('rec-modal-title').textContent=`Phiếu nhập ${r.code||''} — ${r.date||''}`;
+  document.getElementById('rec-modal-body').innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:14px"><div><div class="info-label">Ngày nhập</div><div class="info-value">${r.date||'—'}</div></div><div><div class="info-label">Mã phiếu</div><div class="info-value text-mono">${r.code||'—'}</div></div><div><div class="info-label">Thủ kho</div><div class="info-value">${r.keeper||'—'}</div></div><div><div class="info-label">Mã kho</div><div class="info-value text-mono">${r.warehouse||'—'}</div></div><div><div class="info-label">NCC</div><div class="info-value">${r.supplier||'—'}</div></div><div><div class="info-label">Ký hiệu HĐ</div><div class="info-value">${r.invoiceSerial||'—'}</div></div><div><div class="info-label">Số HĐ</div><div class="info-value">${r.invoiceNum||'—'}</div></div></div><div class="table-wrap" style="max-height:380px;overflow-y:auto"><table><thead><tr><th class="row-num">#</th><th>Mã hàng</th><th>Tên hàng</th><th>ĐVT</th><th>Số lô</th><th>HSD</th><th>SL</th><th>Đơn giá</th><th>VAT%</th><th>Thành tiền</th></tr></thead><tbody>${(r.items||[]).map((it,i)=>{const a=(it.qty||0)*(it.price||0)*(1+(it.vat||0)/100)*(1-(it.discount||0)/100);return`<tr><td class="row-num">${i+1}</td><td class="td-mono">${it.code||'—'}</td><td>${esc(it.name)}</td><td>${it.unit||''}</td><td class="td-mono">${it.lot||'—'}</td><td>${it.expiry||'—'}</td><td class="td-mono">${it.qty}</td><td class="td-mono">${fmtNum(it.price)}</td><td>${it.vat||0}%</td><td class="td-mono" style="color:var(--accent2)">${fmtNum(a)}</td></tr>`}).join('')}</tbody></table></div><div style="text-align:right;margin-top:12px;font-weight:800;font-size:15px">Tổng: <span style="color:var(--accent2)">${fmtNum(total)} đ</span></div>`;
+  openModal('modal-record');
+}
+function deleteRecord(idx){if(!confirm('Xóa phiếu nhập này?'))return;records.splice(idx,1);DB.set('records',records);closeModal('modal-record');renderRecords();updateRecordCount();toast('Đã xóa phiếu nhập','info');}
+function updateRecordCount(){document.getElementById('record-count').textContent=records.length;}
+
+function renderCatalog(){
+  const q=normalize(document.getElementById('cat-search')?.value||'');const filtered=catalog.filter(d=>!q||normalize(d.name).includes(q)||normalize(d.code).includes(q));
+  document.getElementById('cat-count').textContent=catalog.length;
+  document.getElementById('catalog-body').innerHTML=filtered.length?filtered.map(d=>{const ri=catalog.indexOf(d);return`<tr><td class="row-num">${ri+1}</td><td class="td-mono">${d.code||''}</td><td>${esc(d.name)}</td><td class="hide-mobile">${d.unit||''}</td><td class="td-mono">${fmtNum(d.price||0)}</td><td class="hide-mobile">${d.vat||0}%</td><td class="hide-tablet" style="color:var(--text3);font-size:12px">${d.note||''}</td><td><button class="btn btn-ghost btn-xs" onclick="editDrug(${ri})">✏️</button> <button class="btn btn-ghost btn-xs" onclick="deleteDrug(${ri})" style="color:var(--red2)">✕</button></td></tr>`}).join(''):'<tr><td colspan="8" style="text-align:center;color:var(--text3);padding:32px">Chưa có thuốc nào</td></tr>';
+}
+function showAddDrug(){document.getElementById('drug-modal-title').textContent='Thêm thuốc mới';document.getElementById('drug-edit-idx').value='';['d-code','d-name','d-unit','d-vat','d-price','d-note'].forEach(id=>document.getElementById(id).value='');document.getElementById('d-vat').value='5';openModal('modal-drug');}
+function editDrug(i){const d=catalog[i];document.getElementById('drug-modal-title').textContent='Sửa thuốc';document.getElementById('drug-edit-idx').value=i;document.getElementById('d-code').value=d.code||'';document.getElementById('d-name').value=d.name||'';document.getElementById('d-unit').value=d.unit||'';document.getElementById('d-vat').value=d.vat||5;document.getElementById('d-price').value=d.price||0;document.getElementById('d-note').value=d.note||'';openModal('modal-drug');}
+function saveDrug(){const name=document.getElementById('d-name').value.trim();if(!name){toast('Vui lòng nhập tên thuốc','error');return;}const d={code:document.getElementById('d-code').value.trim(),name,unit:document.getElementById('d-unit').value.trim(),vat:parseFloat(document.getElementById('d-vat').value)||0,price:parseFloat(document.getElementById('d-price').value)||0,note:document.getElementById('d-note').value.trim()};const idx=document.getElementById('drug-edit-idx').value;if(idx!=='')catalog[parseInt(idx)]=d;else catalog.push(d);DB.set('catalog',catalog);renderCatalog();closeModal('modal-drug');toast('Đã lưu thuốc!','success');}
+function deleteDrug(i){if(!confirm('Xóa thuốc này?'))return;catalog.splice(i,1);DB.set('catalog',catalog);renderCatalog();toast('Đã xóa','info');}
+async function importCatalog(input){
+  const file=input.files[0];if(!file)return;const buf=await file.arrayBuffer();const wb=XLSX.read(buf,{type:'array'});const ws=wb.Sheets[wb.SheetNames[0]];const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+  let headerRow=0;for(let i=0;i<Math.min(rows.length,5);i++){const r=rows[i].map(c=>String(c).toLowerCase());if(r.some(c=>c.includes('mã')||c.includes('code')||c.includes('tên'))){headerRow=i;break;}}
+  const headers=rows[headerRow].map(c=>String(c).toLowerCase());const codeCol=headers.findIndex(c=>c.includes('mã'));const nameCol=headers.findIndex(c=>c.includes('tên'));const unitCol=headers.findIndex(c=>c.includes('đơn vị')||c.includes('dvt'));const priceCol=headers.findIndex(c=>c.includes('giá bán')||c.includes('price'));const vatCol=headers.findIndex(c=>c.includes('vat')||c.includes('thuế'));
+  let added=0;for(let i=headerRow+1;i<rows.length;i++){const r=rows[i];const name=String(r[nameCol]||r[1]||'').trim();if(!name)continue;const code=String(r[codeCol]||r[0]||'').trim();if(!catalog.find(d=>d.code===code&&d.name===name)){catalog.push({code,name,unit:String(r[unitCol]||'').trim(),price:parseFloat(String(r[priceCol]||0).replace(/\./g,'').replace(',','.'))||0,vat:parseFloat(r[vatCol]||5)||5,note:''});added++;}}
+  DB.set('catalog',catalog);renderCatalog();toast(`Import xong! Thêm ${added} thuốc`,'success');input.value='';
+}
+
+// ======= NATIONAL — pagination state =======
+let natPage=0;
+const NAT_PER_PAGE=50;
+
+function renderNational(){
+  const q=normalize(document.getElementById('nat-search')?.value||'');
+  const container=document.getElementById('nat-content');
+  const countEl=document.getElementById('nat-count');
+  if(countEl)countEl.textContent=national.length;
+  if(!national.length){
+    container.innerHTML=`<div class="empty-state"><div class="empty-icon">🏥</div><div class="empty-title">Chưa có danh mục dược quốc gia</div><div>Nhấn "Import DQG" để tải lên</div></div>`;
+    return;
+  }
+  const filtered=national.filter(d=>!q||normalize(d.name).includes(q)||normalize(d.code||'').includes(q));
+  const totalPages=Math.max(1,Math.ceil(filtered.length/NAT_PER_PAGE));
+  if(natPage>=totalPages)natPage=totalPages-1;
+  if(natPage<0)natPage=0;
+  const pageData=filtered.slice(natPage*NAT_PER_PAGE,(natPage+1)*NAT_PER_PAGE);
+  const offset=natPage*NAT_PER_PAGE;
+
+  // Build pagination controls
+  const pageButtons=[];
+  // Always show first, last, and window around current
+  const windowSize=2;
+  const pages=new Set([0,totalPages-1]);
+  for(let p=Math.max(0,natPage-windowSize);p<=Math.min(totalPages-1,natPage+windowSize);p++)pages.add(p);
+  let sorted=[...pages].sort((a,b)=>a-b);
+  let btnHtml='';let prev=-1;
+  for(const p of sorted){
+    if(prev!==-1&&p-prev>1)btnHtml+=`<span style="padding:0 4px;color:var(--text3)">…</span>`;
+    btnHtml+=`<button onclick="natGoPage(${p})" class="btn btn-sm ${p===natPage?'btn-primary':'btn-outline'}" style="min-width:32px;padding:4px 8px">${p+1}</button>`;
+    prev=p;
+  }
+
+  container.innerHTML=`
+    <div class="table-wrap" style="max-height:460px;overflow-y:auto">
+      <table>
+        <thead><tr>
+          <th class="row-num">#</th>
+          <th>Mã thuốc</th>
+          <th>Tên thuốc</th>
+          <th class="hide-mobile">Hoạt chất</th>
+          <th class="hide-tablet">Dạng bào chế</th>
+        </tr></thead>
+        <tbody>
+          ${pageData.map((d,i)=>`<tr>
+            <td class="row-num">${offset+i+1}</td>
+            <td class="td-mono">${d.code||'—'}</td>
+            <td>${esc(d.name)}</td>
+            <td class="hide-mobile" style="font-size:12px;color:var(--text3)">${d.active||''}</td>
+            <td class="hide-tablet" style="font-size:12px;color:var(--text3)">${d.form||''}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;padding:10px 4px 2px">
+      <div style="font-size:12px;color:var(--text3);font-weight:600">
+        Trang ${natPage+1}/${totalPages} &nbsp;·&nbsp; ${filtered.length.toLocaleString('vi-VN')} kết quả${q?' (đang lọc)':''}
+      </div>
+      <div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap">
+        <button onclick="natGoPage(natPage-1)" class="btn btn-outline btn-sm" ${natPage===0?'disabled':''}>‹</button>
+        ${btnHtml}
+        <button onclick="natGoPage(natPage+1)" class="btn btn-outline btn-sm" ${natPage>=totalPages-1?'disabled':''}>›</button>
+      </div>
+    </div>`;
+}
+
+function natGoPage(p){
+  const q=normalize(document.getElementById('nat-search')?.value||'');
+  const filtered=national.filter(d=>!q||normalize(d.name).includes(q)||normalize(d.code||'').includes(q));
+  const totalPages=Math.max(1,Math.ceil(filtered.length/NAT_PER_PAGE));
+  natPage=Math.max(0,Math.min(p,totalPages-1));
+  renderNational();
+  document.getElementById('nat-content').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+async function importNational(input){
+  const file=input.files[0];if(!file)return;
+  toast('Đang đọc file...','info');
+  let rows;
+  try{
+    const buf=await file.arrayBuffer();
+    const wb=XLSX.read(buf,{type:'array'});
+    const ws=wb.Sheets[wb.SheetNames[0]];
+    rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+  }catch(e){toast('Lỗi đọc file: '+e.message,'error');input.value='';return;}
+
+  // Find header row
+  let headerRow=0;
+  for(let i=0;i<Math.min(rows.length,10);i++){
+    const r=rows[i].map(c=>normalize(String(c)));
+    if(r.some(c=>c.includes('ten')||c.includes('thuoc')||c.includes('ma'))){headerRow=i;break;}
+  }
+  const headers=rows[headerRow].map(c=>normalize(String(c)));
+  const codeCol=headers.findIndex(c=>c.includes('ma')&&(c.includes('thuoc')||c.includes('dang')||c==='ma'));
+  const nameCol=headers.findIndex(c=>c.includes('ten')&&(c.includes('thuoc')||c.includes('thuong')));
+  const activeCol=headers.findIndex(c=>c.includes('hoat chat'));
+  const formCol=headers.findIndex(c=>c.includes('dang bao')||c.includes('ham luong'));
+
+  const dataRows=rows.slice(headerRow+1);
+  if(!dataRows.length){toast('Không tìm thấy dữ liệu trong file','error');input.value='';return;}
+
+  // Parse in async chunks to avoid blocking UI
+  const CHUNK=500;
+  const parsed=[];
+  toast(`Đang xử lý ${dataRows.length.toLocaleString('vi-VN')} dòng...`,'info');
+  for(let start=0;start<dataRows.length;start+=CHUNK){
+    const chunk=dataRows.slice(start,start+CHUNK);
+    for(const r of chunk){
+      const name=String(r[nameCol>=0?nameCol:1]||r[1]||'').trim();
+      if(!name||name.length<2)continue;
+      parsed.push({
+        code:String(r[codeCol>=0?codeCol:0]||'').trim(),
+        name,
+        active:String(r[activeCol>=0?activeCol:'']||'').trim(),
+        form:String(r[formCol>=0?formCol:'']||'').trim()
+      });
+    }
+    // Yield to browser every chunk so UI stays responsive
+    await new Promise(r=>setTimeout(r,0));
+  }
+
+  if(!parsed.length){toast('Không đọc được dữ liệu. Kiểm tra lại định dạng file.','error');input.value='';return;}
+
+  national=parsed;
+  natPage=0;
+  try{
+    DB.set('national',national);
+  }catch(e){
+    // localStorage quota exceeded — store only essential fields to save space
+    const slim=parsed.map(d=>({code:d.code,name:d.name}));
+    try{DB.set('national',slim);national=slim;toast('Danh mục lớn — đã lưu rút gọn (bỏ hoạt chất/dạng bào chế)','info');}
+    catch(e2){toast('Bộ nhớ đầy! Danh mục chỉ dùng trong phiên này.','error');}
+  }
+  renderNational();
+  toast(`Import xong! ${national.length.toLocaleString('vi-VN')} thuốc quốc gia`,'success');
+  input.value='';
+}
+
+function clearNational(){
+  if(!confirm('Xóa toàn bộ danh mục dược quốc gia?'))return;
+  national=[];natPage=0;
+  DB.set('national',national);
+  renderNational();
+  toast('Đã xóa','info');
+}
+
+function renderSuppliers(){document.getElementById('supplier-body').innerHTML=suppliers.length?suppliers.map((s,i)=>`<tr><td class="row-num">${i+1}</td><td class="td-mono">${s.code||''}</td><td>${esc(s.name)}</td><td class="hide-mobile">${s.phone||''}</td><td class="hide-tablet" style="font-size:12px;color:var(--text3)">${s.addr||''}</td><td class="hide-tablet" style="font-size:12px;color:var(--text3)">${s.note||''}</td><td><button class="btn btn-ghost btn-xs" onclick="editSupplier(${i})">✏️</button> <button class="btn btn-ghost btn-xs" onclick="deleteSupplier(${i})" style="color:var(--red2)">✕</button></td></tr>`).join(''):'<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:32px">Chưa có nhà cung cấp</td></tr>';}
+function showAddSupplier(){document.getElementById('sup-edit-idx').value='';['sup-code','sup-name','sup-phone','sup-note','sup-addr'].forEach(id=>document.getElementById(id).value='');openModal('modal-supplier');}
+function editSupplier(i){const s=suppliers[i];document.getElementById('sup-edit-idx').value=i;document.getElementById('sup-code').value=s.code||'';document.getElementById('sup-name').value=s.name||'';document.getElementById('sup-phone').value=s.phone||'';document.getElementById('sup-note').value=s.note||'';document.getElementById('sup-addr').value=s.addr||'';openModal('modal-supplier');}
+function saveSupplier(){const name=document.getElementById('sup-name').value.trim();if(!name){toast('Vui lòng nhập tên NCC','error');return;}const s={code:document.getElementById('sup-code').value.trim(),name,phone:document.getElementById('sup-phone').value.trim(),note:document.getElementById('sup-note').value.trim(),addr:document.getElementById('sup-addr').value.trim()};const idx=document.getElementById('sup-edit-idx').value;if(idx!=='')suppliers[parseInt(idx)]=s;else suppliers.push(s);DB.set('suppliers',suppliers);renderSuppliers();closeModal('modal-supplier');toast('Đã lưu NCC!','success');}
+function deleteSupplier(i){if(!confirm('Xóa nhà cung cấp này?'))return;suppliers.splice(i,1);DB.set('suppliers',suppliers);renderSuppliers();}
+function filterSupplierAC(q){const ac=document.getElementById('supplier-ac');const nq=normalize(q);if(!nq){ac.style.display='none';return;}const hits=suppliers.filter(s=>normalize(s.name).includes(nq)||normalize(s.code).includes(nq)).slice(0,6);if(!hits.length){ac.style.display='none';return;}ac.innerHTML=hits.map(s=>`<div class="autocomplete-item" onclick="selectSupAC('${esc(s.code)}')"><span class="drug-code">${s.code}</span>${s.name}</div>`).join('');ac.style.display='';setTimeout(()=>document.addEventListener('click',function h(e){if(!ac.contains(e.target)){ac.style.display='none';document.removeEventListener('click',h);}},100));}
+function selectSupAC(code){document.getElementById('inp-supplier').value=code;document.getElementById('supplier-ac').style.display='none';}
+
+function backupData(){const data={catalog,national,suppliers,records,settings,exportedAt:new Date().toISOString()};const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`pharmimport_backup_${new Date().toISOString().split('T')[0]}.json`;a.click();toast('Đã xuất file sao lưu!','success');}
+function restoreData(input){const file=input.files[0];if(!file)return;const r=new FileReader();r.onload=e=>{try{const data=JSON.parse(e.target.result);if(!confirm(`Phục hồi dữ liệu từ ${data.exportedAt||'file này'}?\nSẽ ghi đè toàn bộ dữ liệu hiện tại!`))return;catalog=data.catalog||[];national=data.national||[];suppliers=data.suppliers||[];records=data.records||[];settings=data.settings||{};DB.set('catalog',catalog);DB.set('national',national);DB.set('suppliers',suppliers);DB.set('records',records);DB.set('settings',settings);updateRecordCount();renderStorageInfo();toast('Phục hồi thành công!','success');}catch(err){toast('File sao lưu không hợp lệ','error');}};r.readAsText(file);input.value='';}
+function clearAllData(){if(!prompt('Nhập "XOA" để xác nhận xóa toàn bộ dữ liệu:')?.includes('XOA'))return;catalog=[];national=[];suppliers=[];records=[];['catalog','national','suppliers','records'].forEach(k=>DB.set(k,[]));updateRecordCount();renderStorageInfo();toast('Đã xóa toàn bộ dữ liệu','info');}
+function renderStorageInfo(){let size=0;for(let k in localStorage)if(k.startsWith('pi_'))size+=localStorage[k].length;document.getElementById('storage-info').innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px"><div><div class="info-label">Phiếu nhập</div><div class="info-value">${records.length}</div></div><div><div class="info-label">Danh mục quầy</div><div class="info-value">${catalog.length}</div></div><div><div class="info-label">Dược quốc gia</div><div class="info-value">${national.length}</div></div><div><div class="info-label">Nhà cung cấp</div><div class="info-value">${suppliers.length}</div></div><div><div class="info-label">Dung lượng</div><div class="info-value">${(size/1024).toFixed(1)} KB</div></div></div>`;}
+
+function loadSettings(){document.getElementById('s-name').value=settings.name||'';document.getElementById('s-shopcode').value=settings.shopcode||'';document.getElementById('s-keeper').value=settings.keeper||'';document.getElementById('s-supplier').value=settings.supplier||'';document.getElementById('s-apikey').value=DB.get('apikey','')||'';const isDark=currentTheme==='dark';document.getElementById('btn-dark').className='btn '+(isDark?'btn-primary':'btn-outline');document.getElementById('btn-light').className='btn '+(isDark?'btn-outline':'btn-primary');}
+function saveSettings(){settings={name:document.getElementById('s-name').value,shopcode:document.getElementById('s-shopcode').value,keeper:document.getElementById('s-keeper').value,supplier:document.getElementById('s-supplier').value};DB.set('settings',settings);toast('Đã lưu cài đặt!','success');}
+function saveAPIKey(){apiKey=document.getElementById('s-apikey').value.trim();DB.set('apikey',apiKey);toast('Đã lưu API Key!','success');}
+
+function fmtNum(n){if(isNaN(n))return'0';return Math.round(n).toLocaleString('vi-VN');}
+function fmtDateInput(d){if(!d)return'';const dt=new Date(d);if(isNaN(dt))return String(d);return`${dt.getDate().toString().padStart(2,'0')}/${(dt.getMonth()+1).toString().padStart(2,'0')}/${dt.getFullYear()}`;}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+updateRecordCount();
+</script>
+</body>
+</html>
