@@ -70,18 +70,11 @@ input,button,select,textarea{font-family:inherit}
 .nav-icon{font-size:16px;width:20px;text-align:center;flex-shrink:0}
 .nav-badge{background:var(--accent);color:#fff;font-size:10px;font-weight:700;padding:1px 7px;border-radius:20px;margin-left:auto;flex-shrink:0}
 .sidebar-footer{padding:12px 14px;border-top:1px solid var(--border);font-size:11px;color:var(--text3);flex-shrink:0}
-/* Thu gọn thanh bên trái trên desktop (>900px) — ẩn hẳn, main chiếm full width */
-@media (min-width:901px){
-  .sidebar{transition:transform var(--transition)}
-  .sidebar.collapsed{transform:translateX(-100%)}
-  .main{transition:margin var(--transition)}
-  .main.sidebar-collapsed{margin-left:0}
-}
 
 /* TOPBAR */
 .topbar{background:var(--bg2);border-bottom:1px solid var(--border);height:var(--topbar-h);padding:0 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;transition:background var(--transition),border-color var(--transition);gap:12px}
 .topbar-left{display:flex;align-items:center;gap:12px;min-width:0}
-.menu-btn{display:flex;align-items:center;justify-content:center;background:none;border:none;color:var(--text2);font-size:20px;cursor:pointer;padding:6px;border-radius:8px;flex-shrink:0;transition:background var(--transition)}
+.menu-btn{display:none;background:none;border:none;color:var(--text2);font-size:20px;cursor:pointer;padding:6px;border-radius:8px;flex-shrink:0;transition:background var(--transition)}
 .menu-btn:hover{background:var(--bg4);color:var(--text)}
 .page-title{font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .page-sub{font-size:11.5px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -313,13 +306,13 @@ input[type="date"]{color-scheme:dark}
   </div>
 </aside>
 
-<main class="main" id="main">
+<main class="main">
 
 <!-- PAGE: IMPORT -->
 <div id="page-import" class="page active">
   <div class="topbar">
     <div class="topbar-left">
-      <button class="menu-btn" onclick="toggleSidebar()" title="Ẩn/hiện thanh bên">☰</button>
+      <button class="menu-btn" onclick="openSidebar()">☰</button>
       <div><div class="page-title">📥 Nhập hóa đơn mới</div><div class="page-sub">Tải hóa đơn lên để tự động xử lý</div></div>
     </div>
     <div class="topbar-actions">
@@ -416,7 +409,7 @@ input[type="date"]{color-scheme:dark}
 <div id="page-records" class="page">
   <div class="topbar">
     <div class="topbar-left">
-      <button class="menu-btn" onclick="toggleSidebar()" title="Ẩn/hiện thanh bên">☰</button>
+      <button class="menu-btn" onclick="openSidebar()">☰</button>
       <div><div class="page-title">📋 Lịch sử phiếu nhập</div><div class="page-sub">Tất cả phiếu nhập đã lưu</div></div>
     </div>
     <div class="topbar-actions">
@@ -434,7 +427,7 @@ input[type="date"]{color-scheme:dark}
 <div id="page-catalog" class="page">
   <div class="topbar">
     <div class="topbar-left">
-      <button class="menu-btn" onclick="toggleSidebar()" title="Ẩn/hiện thanh bên">☰</button>
+      <button class="menu-btn" onclick="openSidebar()">☰</button>
       <div><div class="page-title">🗂️ Danh mục thuốc quầy</div><div class="page-sub">Danh mục riêng của nhà thuốc</div></div>
     </div>
     <div class="topbar-actions">
@@ -460,7 +453,7 @@ input[type="date"]{color-scheme:dark}
 <div id="page-national" class="page">
   <div class="topbar">
     <div class="topbar-left">
-      <button class="menu-btn" onclick="toggleSidebar()" title="Ẩn/hiện thanh bên">☰</button>
+      <button class="menu-btn" onclick="openSidebar()">☰</button>
       <div><div class="page-title">🏥 Dược quốc gia</div><div class="page-sub">Danh mục để đối chiếu tên thuốc</div></div>
     </div>
     <div class="topbar-actions">
@@ -486,7 +479,7 @@ input[type="date"]{color-scheme:dark}
 <div id="page-suppliers" class="page">
   <div class="topbar">
     <div class="topbar-left">
-      <button class="menu-btn" onclick="toggleSidebar()" title="Ẩn/hiện thanh bên">☰</button>
+      <button class="menu-btn" onclick="openSidebar()">☰</button>
       <div><div class="page-title">🏢 Nhà cung cấp</div><div class="page-sub">Quản lý danh sách nhà cung cấp</div></div>
     </div>
     <div class="topbar-actions">
@@ -505,7 +498,7 @@ input[type="date"]{color-scheme:dark}
 <div id="page-backup" class="page">
   <div class="topbar">
     <div class="topbar-left">
-      <button class="menu-btn" onclick="toggleSidebar()" title="Ẩn/hiện thanh bên">☰</button>
+      <button class="menu-btn" onclick="openSidebar()">☰</button>
       <div><div class="page-title">💾 Sao lưu & Phục hồi</div><div class="page-sub">Quản lý dữ liệu cục bộ</div></div>
     </div>
     <div class="topbar-actions"><button class="theme-toggle" onclick="toggleTheme()" id="theme-btn6"><span class="toggle-icon" id="theme-icon6">🌙</span></button></div>
@@ -524,7 +517,7 @@ input[type="date"]{color-scheme:dark}
 <div id="page-settings" class="page">
   <div class="topbar">
     <div class="topbar-left">
-      <button class="menu-btn" onclick="toggleSidebar()" title="Ẩn/hiện thanh bên">☰</button>
+      <button class="menu-btn" onclick="openSidebar()">☰</button>
       <div><div class="page-title">⚙️ Cài đặt</div></div>
     </div>
     <div class="topbar-actions"><button class="theme-toggle" onclick="toggleTheme()" id="theme-btn7"><span class="toggle-icon" id="theme-icon7">🌙</span></button></div>
@@ -617,7 +610,7 @@ input[type="date"]{color-scheme:dark}
   <div class="modal" style="max-width:460px">
     <div class="modal-header"><div class="modal-title">📦 Quy đổi đơn vị đóng gói</div><button class="btn btn-ghost btn-sm" onclick="closeModal('modal-pack')">✕</button></div>
     <div class="modal-body">
-      <div class="info-box" style="margin-bottom:14px">💡 Hóa đơn ghi theo <strong>đơn vị lớn</strong> (hộp/thùng) nhưng nhập kho theo <strong>đơn vị bán lẻ</strong> (viên/chai/tuýp). Nhập quy cách đóng gói để tự tính lại số lượng, đơn giá nhập và giá bán (+15%).</div>
+      <div class="info-box" style="margin-bottom:14px">💡 Hóa đơn ghi theo <strong>đơn vị lớn</strong> (hộp/thùng) nhưng nhập kho theo <strong>đơn vị bán lẻ</strong> (viên/chai/tuýp). Nhập quy cách đóng gói để tự tính lại số lượng, đơn giá nhập và giá bán theo % lãi bạn chọn.</div>
       <div style="font-size:13px;font-weight:700;margin-bottom:6px" id="pack-item-name">—</div>
       <div id="pack-guess-hint" style="font-size:12px;color:var(--orange2);font-weight:600;margin-bottom:10px"></div>
       <div class="form-group"><label class="form-label">Đơn vị lớn trên hóa đơn (VD: Hộp)</label><input class="form-input" id="pack-unit-big" placeholder="Hộp"></div>
@@ -628,6 +621,7 @@ input[type="date"]{color-scheme:dark}
         <div class="form-group"><label class="form-label">SL trên hóa đơn (đơn vị lớn)</label><input class="form-input td-mono" id="pack-qty-big" type="number" min="0" step="0.01"></div>
         <div class="form-group"><label class="form-label">Đơn giá trên hóa đơn (đơn vị lớn)</label><input class="form-input td-mono" id="pack-price-big" type="number" min="0" step="0.01"></div>
       </div>
+      <div class="form-group"><label class="form-label">% lãi tính giá bán (mặc định 15%)</label><input class="form-input td-mono" id="pack-markup" type="number" min="0" step="0.1" value="15"></div>
       <div id="pack-preview" style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:12px;font-size:13px;line-height:1.9;margin-top:6px"></div>
     </div>
     <div class="modal-footer">
@@ -663,29 +657,12 @@ applyTheme(currentTheme);
 
 // ======================== DATA ========================
 const DB={get:(k,d)=>{try{return JSON.parse(localStorage.getItem('pi_'+k))??d}catch{return d}},set:(k,v)=>localStorage.setItem('pi_'+k,JSON.stringify(v))};
-let catalog=DB.get('catalog',[]),national=DB.get('national',[]),suppliers=DB.get('suppliers',[]),records=DB.get('records',[]),settings=DB.get('settings',{name:'',shopcode:'',keeper:'',supplier:''}),apiKey=DB.get('apikey',''),packmap=DB.get('packmap',{});
+let catalog=DB.get('catalog',[]),national=DB.get('national',[]),suppliers=DB.get('suppliers',[]),records=DB.get('records',[]),settings=DB.get('settings',{name:'',shopcode:'',keeper:'',supplier:''}),apiKey=DB.get('apikey','');
 let currentItems=[],currentRecordIdx=-1,editingRecordIdx=-1;
 
 // ======================== SIDEBAR ========================
 function openSidebar(){document.getElementById('sidebar').classList.add('open');const ov=document.getElementById('sidebar-overlay');ov.style.display='block';ov.style.pointerEvents='all';requestAnimationFrame(()=>ov.classList.add('show'));}
 function closeSidebar(){document.getElementById('sidebar').classList.remove('open');const ov=document.getElementById('sidebar-overlay');ov.classList.remove('show');setTimeout(()=>{ov.style.display='none';ov.style.pointerEvents='none';},250);}
-// Nút ☰ trên topbar: màn hình hẹp (≤900px) -> mở overlay trượt như cũ;
-// màn hình rộng (>900px) -> ẩn/hiện hẳn thanh bên trái, main chiếm full width, nhớ trạng thái qua localStorage
-function toggleSidebar(){
-  if(window.innerWidth<=900){openSidebar();return;}
-  const sb=document.getElementById('sidebar'),main=document.getElementById('main');
-  const collapsed=sb.classList.toggle('collapsed');
-  main.classList.toggle('sidebar-collapsed',collapsed);
-  DB.set('sidebarCollapsed',collapsed);
-}
-// Áp trạng thái đã lưu khi tải trang (chỉ áp cho desktop; mobile luôn khởi động ở trạng thái đóng overlay)
-function applySavedSidebarState(){
-  if(window.innerWidth<=900)return;
-  if(DB.get('sidebarCollapsed',false)){
-    document.getElementById('sidebar').classList.add('collapsed');
-    document.getElementById('main').classList.add('sidebar-collapsed');
-  }
-}
 
 // ======================== NAVIGATION ========================
 function showPage(p){
@@ -1178,34 +1155,8 @@ Trả về JSON (không markdown):
   }
 }
 
-// Tự động áp dụng quy đổi đóng gói cho các dòng có mã đã từng lưu quy cách trong packmap,
-// không cần mở modal — chỉ áp dụng khi số lượng/đơn giá gốc hợp lệ và dòng chưa được quy đổi.
-// Trả về số dòng đã tự động quy đổi được.
-function autoApplyKnownPacks(items){
-  let count=0;
-  items.forEach(it=>{
-    if(it.packConverted||!it.code)return;
-    const p=packmap[it.code];
-    if(!p||!p.size||p.size<=0)return;
-    const qtyBig=parseFloat(it.qty)||0;
-    const priceBig=parseFloat(it.price)||0;
-    if(qtyBig<=0)return; // không đủ số lượng gốc để tính lại thì bỏ qua, để người dùng tự xử lý qua modal
-    it.qty=qtyBig*p.size;
-    it.price=Math.round((priceBig/p.size)*100)/100;
-    it.sellprice=roundTo100(it.price*1.15);
-    it.unit=p.unitSmall||it.unit;
-    it.packConverted=true;
-    it.packSize=p.size;
-    it.packOrigUnit=p.unitBig||'Hộp';
-    it.packOrigQty=qtyBig;
-    it.packOrigPrice=priceBig;
-    count++;
-  });
-  return count;
-}
 function initImportView(items,invoiceInfo){
   currentItems=items;
-  const autoPacked=autoApplyKnownPacks(currentItems);
   if(editingRecordIdx>=0){editingRecordIdx=-1;setEditModeUI(false);}
   document.getElementById('invoice-section').style.display='';
   document.getElementById('items-section').style.display='';
@@ -1227,8 +1178,7 @@ function initImportView(items,invoiceInfo){
   }
   renderItemsTable();
   const infoMsg=(invoiceInfo&&(invoiceInfo.invoiceNumber||invoiceInfo.invoiceDate))?' (đã tự nhận thông tin hóa đơn)':'';
-  const packMsg=autoPacked>0?(' — đã tự quy đổi đóng gói cho '+autoPacked+' dòng theo mã đã biết'):'';
-  toast('Đọc xong! '+items.length+' sản phẩm'+infoMsg+packMsg,'success');
+  toast('Đọc xong! '+items.length+' sản phẩm'+infoMsg,'success');
 }
 // Chuyển dd/mm/yyyy -> yyyy-mm-dd để gán vào input type="date"
 function vnDateToISO(s){
@@ -1264,7 +1214,7 @@ function renderItemsTable(){
       <td class="hide-mobile"><input class="form-input" style="width:52px;font-size:12px;padding:6px 8px;text-align:right" type="number" value="${it.vat||0}" onchange="updateItem(${i},'vat',this.value)" min="0"></td>
       <td class="hide-tablet"><input class="form-input" style="width:52px;font-size:12px;padding:6px 8px;text-align:right" type="number" value="${it.discount||0}" onchange="updateItem(${i},'discount',this.value)" min="0"></td>
       <td class="td-mono" style="text-align:right;color:var(--accent2);font-weight:700;white-space:nowrap" id="amt-${i}">${fmtNum(amt)}</td>
-      <td>${it.packConverted?`<span class="btn btn-outline btn-xs" style="padding:4px 7px;font-size:11px" onclick="openPackConvert(${i})" title="Đã quy đổi: ${it.packOrigUnit||''} → ${it.unit||''} (x${it.packSize||1})">✅📦</span>`:`<span class="btn btn-outline btn-xs" style="padding:4px 7px;font-size:11px" onclick="openPackConvert(${i})" title="Quy đổi đơn vị đóng gói">📦</span>`}</td>
+      <td>${it.packConverted?`<span class="btn btn-outline btn-xs" style="padding:4px 7px;font-size:11px" onclick="openPackConvert(${i})" title="Đã quy đổi: ${it.packOrigUnit||''} → ${it.unit||''} (x${it.packSize||1}), lãi +${it.packMarkup!=null?it.packMarkup:15}%">✅📦</span>`:`<span class="btn btn-outline btn-xs" style="padding:4px 7px;font-size:11px" onclick="openPackConvert(${i})" title="Quy đổi đơn vị đóng gói">📦</span>`}</td>
       <td><span class="delete-row" onclick="removeRow(${i})">✕</span></td>`;
     tbody.appendChild(tr);
   });
@@ -1322,31 +1272,22 @@ function parsePackFromName(name){
   return null;
 }
 let packConvertIdx=-1;
-// Dò quy cách đóng gói theo mã thuốc đã lưu từ những lần quy đổi trước (ưu tiên cao nhất — chính xác tuyệt đối vì gắn với đúng mã hàng)
-function guessPackFromCode(code){
-  if(!code)return null;
-  const p=packmap[code];
-  if(!p||!p.size)return null;
-  return {unitBig:p.unitBig||'Hộp',unitSmall:p.unitSmall||'',size:p.size,fromCode:true};
-}
 function openPackConvert(i){
   packConvertIdx=i;const it=currentItems[i];
   document.getElementById('pack-item-name').textContent=it.name||'(Chưa đặt tên)';
-  // Ưu tiên dò theo mã thuốc (đáng tin cậy nhất vì đúng mã hàng), nếu không có thì mới dò theo tên
-  const guess=(!it.packConverted)?(guessPackFromCode(it.code)||parsePackFromName(it.name)):null;
+  const guess=(!it.packConverted)?parsePackFromName(it.name):null;
   document.getElementById('pack-unit-big').value=it.packOrigUnit||(guess?guess.unitBig:'Hộp');
   document.getElementById('pack-unit-small').value=it.packConverted?(it.unit||''):((guess&&guess.unitSmall)?guess.unitSmall:(it.unit||''));
   document.getElementById('pack-size').value=it.packSize||(guess?guess.size:'');
   document.getElementById('pack-qty-big').value=it.packConverted?(it.packOrigQty!=null?it.packOrigQty:''):(it.qty||'');
   document.getElementById('pack-price-big').value=it.packConverted?(it.packOrigPrice!=null?it.packOrigPrice:''):(it.price||'');
-  ['pack-size','pack-qty-big','pack-price-big','pack-unit-big','pack-unit-small'].forEach(id=>{
+  document.getElementById('pack-markup').value=(it.packMarkup!=null?it.packMarkup:15);
+  ['pack-size','pack-qty-big','pack-price-big','pack-unit-big','pack-unit-small','pack-markup'].forEach(id=>{
     const el=document.getElementById(id);if(el)el.oninput=updatePackPreview;
   });
   if(guess){
     const hint=document.getElementById('pack-guess-hint');
-    if(hint)hint.textContent=guess.fromCode
-      ?`🔎 Tự nhận diện theo mã thuốc "${it.code}" (đã lưu từ lần nhập trước): ${guess.unitBig} = ${fmtNum(guess.size)} ${guess.unitSmall||'đơn vị nhỏ'}. Vui lòng kiểm tra lại trước khi áp dụng.`
-      :`🔎 Tự nhận diện từ tên thuốc: ${guess.unitBig} = ${fmtNum(guess.size)} ${guess.unitSmall||'đơn vị nhỏ'}. Vui lòng kiểm tra lại trước khi áp dụng.`;
+    if(hint)hint.textContent=`🔎 Tự nhận diện từ tên thuốc: ${guess.unitBig} = ${fmtNum(guess.size)} ${guess.unitSmall||'đơn vị nhỏ'}. Vui lòng kiểm tra lại trước khi áp dụng.`;
   }else{
     const hint=document.getElementById('pack-guess-hint');
     if(hint)hint.textContent='';
@@ -1358,6 +1299,8 @@ function updatePackPreview(){
   const size=parseFloat(document.getElementById('pack-size').value)||0;
   const qtyBig=parseFloat(document.getElementById('pack-qty-big').value)||0;
   const priceBig=parseFloat(document.getElementById('pack-price-big').value)||0;
+  const markup=parseFloat(document.getElementById('pack-markup').value);
+  const markupPct=isNaN(markup)?15:markup;
   const unitBig=document.getElementById('pack-unit-big').value||'đơn vị lớn';
   const unitSmall=document.getElementById('pack-unit-small').value||'đơn vị nhỏ';
   document.getElementById('pack-unit-big-lbl').textContent=unitBig;
@@ -1366,10 +1309,10 @@ function updatePackPreview(){
   if(size<=0){box.innerHTML='<span style="color:var(--text3)">Nhập quy cách đóng gói để xem kết quả tính toán.</span>';return;}
   const qtySmall=qtyBig*size;
   const priceSmall=priceBig/size;
-  const sellPrice=roundTo100(priceSmall*1.15);
+  const sellPrice=roundTo100(priceSmall*(1+markupPct/100));
   box.innerHTML=`Số lượng nhập kho: <strong>${fmtNum(qtySmall)} ${esc(unitSmall)}</strong><br>`
     +`Đơn giá nhập (đã quy đổi): <strong>${fmtNum(priceSmall)}</strong> đ/${esc(unitSmall)}<br>`
-    +`Giá bán (+15%, làm tròn trăm): <strong style="color:var(--accent2)">${fmtNum(sellPrice)}</strong> đ/${esc(unitSmall)}`;
+    +`Giá bán (+${fmtNum(markupPct)}%, làm tròn trăm): <strong style="color:var(--accent2)">${fmtNum(sellPrice)}</strong> đ/${esc(unitSmall)}`;
 }
 function roundTo100(n){return Math.round(n/100)*100;}
 function applyPackConvert(){
@@ -1378,26 +1321,24 @@ function applyPackConvert(){
   if(size<=0){toast('Vui lòng nhập quy cách đóng gói hợp lệ (lớn hơn 0)','error');return;}
   const qtyBig=parseFloat(document.getElementById('pack-qty-big').value)||0;
   const priceBig=parseFloat(document.getElementById('pack-price-big').value)||0;
+  const markup=parseFloat(document.getElementById('pack-markup').value);
+  const markupPct=isNaN(markup)?15:markup;
   const unitBig=document.getElementById('pack-unit-big').value.trim()||'Hộp';
   const unitSmall=document.getElementById('pack-unit-small').value.trim()||'Viên';
   const it=currentItems[packConvertIdx];
   it.qty=qtyBig*size;
   it.price=Math.round((priceBig/size)*100)/100;
-  it.sellprice=roundTo100(it.price*1.15);
+  it.sellprice=roundTo100(it.price*(1+markupPct/100));
   it.unit=unitSmall;
   it.packConverted=true;
   it.packSize=size;
   it.packOrigUnit=unitBig;
   it.packOrigQty=qtyBig;
   it.packOrigPrice=priceBig;
-  // Ghi nhớ quy cách đóng gói theo mã thuốc để tự dò cho các lần nhập sau
-  if(it.code){
-    packmap[it.code]={unitBig,unitSmall,size};
-    DB.set('packmap',packmap);
-  }
+  it.packMarkup=markupPct;
   renderItemsTable();
   closeModal('modal-pack');
-  toast('Đã quy đổi sang '+unitSmall+' và tính lại giá bán!'+(it.code?' (Đã ghi nhớ quy cách cho mã '+it.code+')':''),'success');
+  toast('Đã quy đổi sang '+unitSmall+' và tính lại giá bán (+'+fmtNum(markupPct)+'%)!','success');
 }
 function clearImport(){currentItems=[];document.getElementById('invoice-section').style.display='none';document.getElementById('items-section').style.display='none';document.getElementById('btn-save').disabled=true;document.getElementById('btn-export').disabled=true;document.getElementById('file-input').value='';showProgress(false);if(editingRecordIdx>=0){editingRecordIdx=-1;setEditModeUI(false);}}
 function showDrugAC(idx,input){
@@ -1686,9 +1627,9 @@ function deleteSupplier(i){if(!confirm('Xóa nhà cung cấp này?'))return;supp
 function filterSupplierAC(q){const ac=document.getElementById('supplier-ac');const nq=normalize(q);if(!nq){ac.style.display='none';return;}const hits=suppliers.filter(s=>normalize(s.name).includes(nq)||normalize(s.code).includes(nq)).slice(0,6);if(!hits.length){ac.style.display='none';return;}ac.innerHTML=hits.map(s=>`<div class="autocomplete-item" onclick="selectSupAC('${esc(s.code)}')"><span class="drug-code">${s.code}</span>${s.name}</div>`).join('');ac.style.display='';setTimeout(()=>document.addEventListener('click',function h(e){if(!ac.contains(e.target)){ac.style.display='none';document.removeEventListener('click',h);}},100));}
 function selectSupAC(code){document.getElementById('inp-supplier').value=code;document.getElementById('supplier-ac').style.display='none';}
 
-function backupData(){const data={catalog,national,suppliers,records,settings,packmap,exportedAt:new Date().toISOString()};const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`pharmimport_backup_${new Date().toISOString().split('T')[0]}.json`;a.click();toast('Đã xuất file sao lưu!','success');}
-function restoreData(input){const file=input.files[0];if(!file)return;const r=new FileReader();r.onload=e=>{try{const data=JSON.parse(e.target.result);if(!confirm(`Phục hồi dữ liệu từ ${data.exportedAt||'file này'}?\nSẽ ghi đè toàn bộ dữ liệu hiện tại!`))return;catalog=data.catalog||[];national=data.national||[];suppliers=data.suppliers||[];records=data.records||[];settings=data.settings||{};packmap=data.packmap||{};DB.set('catalog',catalog);DB.set('national',national);DB.set('suppliers',suppliers);DB.set('records',records);DB.set('settings',settings);DB.set('packmap',packmap);updateRecordCount();renderStorageInfo();toast('Phục hồi thành công!','success');}catch(err){toast('File sao lưu không hợp lệ','error');}};r.readAsText(file);input.value='';}
-function clearAllData(){if(!prompt('Nhập "XOA" để xác nhận xóa toàn bộ dữ liệu:')?.includes('XOA'))return;catalog=[];national=[];suppliers=[];records=[];packmap={};['catalog','national','suppliers','records'].forEach(k=>DB.set(k,[]));DB.set('packmap',{});updateRecordCount();renderStorageInfo();toast('Đã xóa toàn bộ dữ liệu','info');}
+function backupData(){const data={catalog,national,suppliers,records,settings,exportedAt:new Date().toISOString()};const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`pharmimport_backup_${new Date().toISOString().split('T')[0]}.json`;a.click();toast('Đã xuất file sao lưu!','success');}
+function restoreData(input){const file=input.files[0];if(!file)return;const r=new FileReader();r.onload=e=>{try{const data=JSON.parse(e.target.result);if(!confirm(`Phục hồi dữ liệu từ ${data.exportedAt||'file này'}?\nSẽ ghi đè toàn bộ dữ liệu hiện tại!`))return;catalog=data.catalog||[];national=data.national||[];suppliers=data.suppliers||[];records=data.records||[];settings=data.settings||{};DB.set('catalog',catalog);DB.set('national',national);DB.set('suppliers',suppliers);DB.set('records',records);DB.set('settings',settings);updateRecordCount();renderStorageInfo();toast('Phục hồi thành công!','success');}catch(err){toast('File sao lưu không hợp lệ','error');}};r.readAsText(file);input.value='';}
+function clearAllData(){if(!prompt('Nhập "XOA" để xác nhận xóa toàn bộ dữ liệu:')?.includes('XOA'))return;catalog=[];national=[];suppliers=[];records=[];['catalog','national','suppliers','records'].forEach(k=>DB.set(k,[]));updateRecordCount();renderStorageInfo();toast('Đã xóa toàn bộ dữ liệu','info');}
 function renderStorageInfo(){let size=0;for(let k in localStorage)if(k.startsWith('pi_'))size+=localStorage[k].length;document.getElementById('storage-info').innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px"><div><div class="info-label">Phiếu nhập</div><div class="info-value">${records.length}</div></div><div><div class="info-label">Danh mục quầy</div><div class="info-value">${catalog.length}</div></div><div><div class="info-label">Dược quốc gia</div><div class="info-value">${national.length}</div></div><div><div class="info-label">Nhà cung cấp</div><div class="info-value">${suppliers.length}</div></div><div><div class="info-label">Dung lượng</div><div class="info-value">${(size/1024).toFixed(1)} KB</div></div></div>`;}
 
 function loadSettings(){document.getElementById('s-name').value=settings.name||'';document.getElementById('s-shopcode').value=settings.shopcode||'';document.getElementById('s-keeper').value=settings.keeper||'';document.getElementById('s-supplier').value=settings.supplier||'';document.getElementById('s-apikey').value=DB.get('apikey','')||'';const isDark=currentTheme==='dark';document.getElementById('btn-dark').className='btn '+(isDark?'btn-primary':'btn-outline');document.getElementById('btn-light').className='btn '+(isDark?'btn-outline':'btn-primary');}
@@ -1739,7 +1680,6 @@ function fmtDateInput(d){if(!d)return'';const dt=new Date(d);if(isNaN(dt))return
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
 updateRecordCount();
-applySavedSidebarState();
 </script>
 </body>
 </html>
