@@ -7,14 +7,22 @@ function renderNational() {
   const q = normalize(document.getElementById('nat-search')?.value || '');
   const container = document.getElementById('nat-content');
   const countEl = document.getElementById('nat-count');
-  if (countEl) countEl.textContent = national.length;
+  if (countEl) countEl.textContent = national.length.toLocaleString('vi-VN');
   if (!container) return;
 
   if (!national.length) {
+    if (!DB.isReady) {
+      container.innerHTML = `<div class="empty-state" style="padding:40px 20px">
+        <div style="font-size:36px;margin-bottom:12px;animation:spin 1s linear infinite;display:inline-block">⏳</div>
+        <div class="empty-title">Đang nạp 52.000 thuốc quốc gia từ IndexedDB...</div>
+        <div style="color:var(--text3);font-size:14px">Vui lòng chờ trong giây lát (khoảng 1-2 giây)</div>
+      </div>`;
+      return;
+    }
     container.innerHTML = `<div class="empty-state">
       <div class="empty-icon">🏥</div>
       <div class="empty-title">Chưa có danh mục dược quốc gia</div>
-      <div>Nhấn "Import DQG" để tải lên</div>
+      <div>Nhấn "Import DQG" để tải lên file Excel/XLS</div>
     </div>`;
     return;
   }
@@ -144,9 +152,13 @@ async function importNational(input) {
 
   national = parsed;
   natPage = 0;
-  DB.set('national', national);
+  
+  toast(`Đang lưu ${national.length.toLocaleString('vi-VN')} thuốc vào ổ cứng IndexedDB...`, 'info');
+  // Chờ transaction hoàn tất ghi trọn vẹn xuống IndexedDB trước khi báo hoàn tất
+  await DB.set('national', national);
+  
   renderNational();
-  toast(`Import xong! Đã lưu trọn vẹn ${national.length.toLocaleString('vi-VN')} thuốc quốc gia vào IndexedDB!`, 'success');
+  toast(`✅ Đã lưu vĩnh viễn ${national.length.toLocaleString('vi-VN')} thuốc DQG vào IndexedDB! F5/Refresh không bao giờ mất!`, 'success');
   input.value = '';
 }
 

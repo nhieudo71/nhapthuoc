@@ -5,80 +5,112 @@ const IDB_VERSION = 1;
 const IDB_STORE = 'app_data';
 
 let idbDatabase = null;
+let idbOpenPromise = null;
 const memoryCache = {};
 
-// Khởi tạo IndexedDB Promise-based wrapper
+// Tự động mở IndexedDB ngay khi tải file script
 function openIndexedDB() {
-  return new Promise((resolve, reject) => {
+  if (idbOpenPromise) return idbOpenPromise;
+
+  idbOpenPromise = new Promise((resolve) => {
     if (!window.indexedDB) {
       console.warn('Trình duyệt không hỗ trợ IndexedDB. Sử dụng LocalStorage dự phòng.');
       resolve(null);
       return;
     }
 
-    const request = window.indexedDB.open(IDB_NAME, IDB_VERSION);
+    try {
+      const request = window.indexedDB.open(IDB_NAME, IDB_VERSION);
 
-    request.onupgradeneeded = (event) => {
-      const db = event.target.result;
-      if (!db.objectStoreNames.contains(IDB_STORE)) {
-        db.createObjectStore(IDB_STORE);
-      }
-    };
+      request.onupgradeneeded = (event) => {
+        const db = event.target.result;
+        if (!db.objectStoreNames.contains(IDB_STORE)) {
+          db.createObjectStore(IDB_STORE);
+        }
+      };
 
-    request.onsuccess = (event) => {
-      idbDatabase = event.target.result;
-      // Yêu cầu quyền lưu trữ bền vững (Persistent Storage) lên đến 5GB+
-      if (navigator.storage && navigator.storage.persist) {
-        navigator.storage.persist().then(persistent => {
-          if (persistent) console.log('✅ IndexedDB đã bật chế độ lưu trữ bền vững (Persistent Storage).');
-        }).catch(() => {});
-      }
-      resolve(idbDatabase);
-    };
+      request.onsuccess = (event) => {
+        idbDatabase = event.target.result;
+        // Bật Persistent Storage để trình duyệt không tự xóa khi thiếu bộ nhớ
+        if (navigator.storage && navigator.storage.persist) {
+          navigator.storage.persist().then(p => {
+            if (p) console.log('✅ IndexedDB đã bật chế độ lưu trữ bền vững (Persistent Storage).');
+          }).catch(() => {});
+        }
+        resolve(idbDatabase);
+      };
 
-    request.onerror = (event) => {
-      console.error('Lỗi mở IndexedDB:', event.target.error);
+      request.onerror = (event) => {
+        console.error('Lỗi mở IndexedDB:', event.target.error);
+        resolve(null);
+      };
+    } catch (e) {
+      console.error('Lỗi ngoại lệ khi mở IndexedDB:', e);
       resolve(null);
-    };
+    }
   });
+
+  return idbOpenPromise;
+}
+
+// Bắt đầu mở DB ngay lập tức
+openIndexedDB();
+
+// Đảm bảo DB luôn sẵn sàng trước khi đọc/ghi
+async function ensureDb() {
+  if (idbDatabase) return idbDatabase;
+  return await openIndexedDB();
 }
 
 // Đọc dữ liệu từ IndexedDB
 function idbGetItem(key) {
-  return new Promise((resolve) => {
-    if (!idbDatabase) {
+  return new Promise(async (resolve) => {
+    const db = await ensureDb();
+    if (!db) {
       resolve(undefined);
       return;
     }
     try {
-      const tx = idbDatabase.transaction([IDB_STORE], 'readonly');
+      const tx = db.transaction([IDB_STORE], 'readonly');
       const store = tx.objectStore(IDB_STORE);
       const req = store.get(key);
       req.onsuccess = () => resolve(req.result);
       req.onerror = () => resolve(undefined);
     } catch (e) {
+      console.error('Lỗi đọc idbGetItem:', e);
       resolve(undefined);
     }
   });
 }
 
-// Ghi dữ liệu vào IndexedDB
+// Ghi dữ liệu vào IndexedDB — Lắng nghe tx.oncomplete để đảm bảo dữ liệu ghi 100% xuống đĩa
 function idbSetItem(key, value) {
-  return new Promise((resolve) => {
-    if (!idbDatabase) {
+  return new Promise(async (resolve) => {
+    const db = await ensureDb();
+    if (!db) {
       resolve(false);
       return;
     }
     try {
-      const tx = idbDatabase.transaction([IDB_STORE], 'readwrite');
+      const tx = db.transaction([IDB_STORE], 'readwrite');
       const store = tx.objectStore(IDB_STORE);
-      const req = store.put(value, key);
-      req.onsuccess = () => resolve(true);
-      req.onerror = (e) => {
-        console.error('Lỗi ghi IndexedDB:', e);
+
+      // Quan trọng: Chỉ resolve khi transaction đã COMMIT THÀNH CÔNG xuống ổ đĩa
+      tx.oncomplete = () => {
+        resolve(true);
+      };
+      tx.onerror = (e) => {
+        console.error(`Lỗi transaction IndexedDB khi lưu "${key}":`, tx.error || e);
         resolve(false);
       };
+      tx.onabort = (e) => {
+        console.error(`Transaction IndexedDB bị abort khi lưu "${key}":`, tx.error || e);
+        resolve(false);
+      };
+
+      store.put(value, key);
     } catch (e) {
+      console.error(`Lỗi ngoại lệ ghi idbSetItem cho "${key}":`, e);
       resolve(false);
     }
   });
@@ -86,17 +118,18 @@ function idbSetItem(key, value) {
 
 // Xóa dữ liệu trong IndexedDB
 function idbDeleteItem(key) {
-  return new Promise((resolve) => {
-    if (!idbDatabase) {
+  return new Promise(async (resolve) => {
+    const db = await ensureDb();
+    if (!db) {
       resolve(false);
       return;
     }
     try {
-      const tx = idbDatabase.transaction([IDB_STORE], 'readwrite');
+      const tx = db.transaction([IDB_STORE], 'readwrite');
       const store = tx.objectStore(IDB_STORE);
-      const req = store.delete(key);
-      req.onsuccess = () => resolve(true);
-      req.onerror = () => resolve(false);
+      tx.oncomplete = () => resolve(true);
+      tx.onerror = () => resolve(false);
+      store.delete(key);
     } catch (e) {
       resolve(false);
     }
@@ -105,17 +138,18 @@ function idbDeleteItem(key) {
 
 // Xóa toàn bộ store trong IndexedDB
 function idbClearStore() {
-  return new Promise((resolve) => {
-    if (!idbDatabase) {
+  return new Promise(async (resolve) => {
+    const db = await ensureDb();
+    if (!db) {
       resolve(false);
       return;
     }
     try {
-      const tx = idbDatabase.transaction([IDB_STORE], 'readwrite');
+      const tx = db.transaction([IDB_STORE], 'readwrite');
       const store = tx.objectStore(IDB_STORE);
-      const req = store.clear();
-      req.onsuccess = () => resolve(true);
-      req.onerror = () => resolve(false);
+      tx.oncomplete = () => resolve(true);
+      tx.onerror = () => resolve(false);
+      store.clear();
     } catch (e) {
       resolve(false);
     }
@@ -123,8 +157,11 @@ function idbClearStore() {
 }
 
 // ======================== UNIFIED STORAGE DB INTERFACE ========================
-// Đồng bộ 2 lớp: Cache RAM tức thì + LocalStorage dự phòng + IndexedDB (lưu trữ 5GB)
+// Đồng bộ 3 lớp: Cache RAM tức thì + IndexedDB (lưu trữ 5GB) + LocalStorage dự phòng
 const DB = {
+  isReady: false,
+  readyPromise: null,
+
   get: (k, d) => {
     if (memoryCache[k] !== undefined) return memoryCache[k];
     try {
@@ -137,77 +174,99 @@ const DB = {
       return d;
     }
   },
-  set: (k, v) => {
-    // 1. Cập nhật Cache RAM
+
+  // set trả về Promise để các tác vụ lớn (như import 52.000 thuốc) có thể await đảm bảo ghi xong
+  set: async (k, v) => {
+    // 1. Cập nhật ngay vào RAM Cache để UI dùng lập tức
     memoryCache[k] = v;
 
-    // 2. Tự động ghi vào IndexedDB (Hỗ trợ dung lượng lớn lên đến 5GB)
-    idbSetItem(k, v).catch(err => console.warn('Lỗi ghi IndexedDB cho key:', k, err));
-
-    // 3. Dự phòng ghi vào LocalStorage nếu kích thước nhỏ (tránh lỗi quota)
-    try {
-      // Đối với national (Dược Quốc Gia) kích thước lớn, ưu tiên IndexedDB để tránh tràn LocalStorage 5MB
-      if (k !== 'national') {
+    // 2. Dự phòng ghi vào LocalStorage (chỉ các mục nhỏ, không ghi national 52.000 dòng để tránh tràn 5MB)
+    if (k !== 'national') {
+      try {
         localStorage.setItem('pi_' + k, JSON.stringify(v));
-      }
-      return true;
-    } catch (e) {
-      console.info(`Dữ liệu "${k}" lớn đã được lưu an toàn trong IndexedDB.`);
-      return true;
+      } catch (lsErr) {}
     }
+
+    // 3. Ghi bền vững vào IndexedDB (lắng nghe tx.oncomplete)
+    const success = await idbSetItem(k, v);
+    return success;
   },
-  // Nạp toàn bộ dữ liệu từ IndexedDB lúc khởi động ứng dụng
+
+  // Nạp toàn bộ dữ liệu từ IndexedDB lúc mở app / refresh trang
   initAndMigrate: async () => {
-    await openIndexedDB();
-    if (!idbDatabase) return;
+    if (DB.readyPromise) return DB.readyPromise;
 
-    const keys = ['catalog', 'national', 'suppliers', 'records', 'settings', 'apikey', 'pricelist', 'lookup_history'];
-    let needsUiUpdate = false;
-
-    for (const k of keys) {
-      const idbVal = await idbGetItem(k);
-      if (idbVal !== undefined && idbVal !== null) {
-        // Có dữ liệu trong IndexedDB
-        memoryCache[k] = idbVal;
-        if (k === 'catalog') catalog = idbVal;
-        if (k === 'national') national = idbVal;
-        if (k === 'suppliers') suppliers = idbVal;
-        if (k === 'records') records = idbVal;
-        if (k === 'pricelist') priceList = idbVal;
-        if (k === 'settings') settings = idbVal;
-        if (k === 'apikey') apiKey = idbVal;
-        needsUiUpdate = true;
-      } else {
-        // Chưa có trong IndexedDB -> Tự động chuyển giao (Migrate) từ LocalStorage sang IndexedDB
-        try {
-          const lsItem = localStorage.getItem('pi_' + k);
-          if (lsItem !== null) {
-            const parsed = JSON.parse(lsItem);
-            await idbSetItem(k, parsed);
-            memoryCache[k] = parsed;
-            if (k === 'catalog') catalog = parsed;
-            if (k === 'national') national = parsed;
-            if (k === 'suppliers') suppliers = parsed;
-            if (k === 'records') records = parsed;
-            if (k === 'pricelist') priceList = parsed;
-            if (k === 'settings') settings = parsed;
-            if (k === 'apikey') apiKey = parsed;
-            needsUiUpdate = true;
-          }
-        } catch (migErr) {}
+    DB.readyPromise = (async () => {
+      await ensureDb();
+      const keys = ['catalog', 'national', 'suppliers', 'records', 'settings', 'apikey', 'pricelist', 'lookup_history'];
+      
+      for (const k of keys) {
+        const idbVal = await idbGetItem(k);
+        if (idbVal !== undefined && idbVal !== null) {
+          // Nạp dữ liệu từ IndexedDB vào RAM Cache và các biến toàn cục
+          memoryCache[k] = idbVal;
+          if (k === 'catalog') catalog = idbVal;
+          if (k === 'national') national = idbVal;
+          if (k === 'suppliers') suppliers = idbVal;
+          if (k === 'records') records = idbVal;
+          if (k === 'pricelist') priceList = idbVal;
+          if (k === 'settings') settings = idbVal;
+          if (k === 'apikey') apiKey = idbVal;
+        } else {
+          // Chưa có trong IndexedDB -> Tự động chuyển giao từ LocalStorage sang
+          try {
+            const lsItem = localStorage.getItem('pi_' + k);
+            if (lsItem !== null) {
+              const parsed = JSON.parse(lsItem);
+              memoryCache[k] = parsed;
+              if (k === 'catalog') catalog = parsed;
+              if (k === 'national') national = parsed;
+              if (k === 'suppliers') suppliers = parsed;
+              if (k === 'records') records = parsed;
+              if (k === 'pricelist') priceList = parsed;
+              if (k === 'settings') settings = parsed;
+              if (k === 'apikey') apiKey = parsed;
+              await idbSetItem(k, parsed);
+            }
+          } catch (migErr) {}
+        }
       }
-    }
 
-    // Cập nhật lại số lượng và thống kê nếu có dữ liệu mới từ IndexedDB
-    if (needsUiUpdate) {
+      DB.isReady = true;
+
+      // Cập nhật lại giao diện ngay sau khi nạp xong dữ liệu từ IndexedDB
       if (typeof updateRecordCount === 'function') updateRecordCount();
       const countPriceEl = document.getElementById('price-count');
       if (countPriceEl) countPriceEl.textContent = priceList.length;
       const countCatEl = document.getElementById('cat-count');
       if (countCatEl) countCatEl.textContent = catalog.length;
       const countNatEl = document.getElementById('nat-count');
-      if (countNatEl) countNatEl.textContent = national.length;
-    }
+      if (countNatEl) countNatEl.textContent = national.length.toLocaleString('vi-VN');
+
+      // Nếu người dùng đang ở tab national, render lại danh sách ngay lập tức!
+      const natPageEl = document.getElementById('page-national');
+      if (natPageEl && natPageEl.classList.contains('active') && typeof renderNational === 'function') {
+        renderNational();
+      }
+      const pricePageEl = document.getElementById('page-pricelist');
+      if (pricePageEl && pricePageEl.classList.contains('active') && typeof renderPriceList === 'function') {
+        renderPriceList();
+      }
+      const catPageEl = document.getElementById('page-catalog');
+      if (catPageEl && catPageEl.classList.contains('active') && typeof renderCatalog === 'function') {
+        renderCatalog();
+      }
+      const recPageEl = document.getElementById('page-records');
+      if (recPageEl && recPageEl.classList.contains('active') && typeof renderRecords === 'function') {
+        renderRecords();
+        renderStats();
+      }
+
+      console.log(`✅ IndexedDB đã sẵn sàng! Đã nạp ${national.length} thuốc DQG, ${records.length} phiếu nhập, ${priceList.length} giá thuốc.`);
+      return true;
+    })();
+
+    return DB.readyPromise;
   }
 };
 
