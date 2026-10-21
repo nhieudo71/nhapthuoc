@@ -9,11 +9,11 @@ function renderPriceList() {
   const tbody = document.getElementById('price-table-body');
   if (!tbody) return;
 
-  const filtered = priceList.filter(d => !q || normalize(d.name).includes(q));
+  const filtered = priceList.filter(d => !q || normalize(d.name).includes(q) || normalize(d.unit || '').includes(q));
   if (countEl) countEl.textContent = priceList.length;
 
   if (!filtered.length) {
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:36px">
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:36px">
       ${priceList.length === 0 ? 'Chưa có bảng giá thuốc nào. Nhấn "Import Excel" hoặc "Thêm giá thuốc" để tạo!' : 'Không tìm thấy thuốc phù hợp'}
     </td></tr>`;
     renderPricePagination(0, 1);
@@ -37,6 +37,7 @@ function renderPriceList() {
     return `<tr>
       <td class="row-num">${d.stt || (offset + i + 1)}</td>
       <td><strong>${esc(d.name)}</strong></td>
+      <td><span class="chip" style="font-size:11px">${esc(d.unit || '—')}</span></td>
       <td class="td-mono" style="text-align:right">${importPriceText}</td>
       <td class="td-mono" style="text-align:right;color:var(--accent2);font-weight:700">${priceText}</td>
       <td class="hide-tablet" style="color:var(--text3);font-size:12px">${esc(d.note || '')}</td>
@@ -86,6 +87,7 @@ function showAddPriceItem() {
   document.getElementById('price-edit-idx').value = '';
   document.getElementById('p-stt').value = (priceList.length + 1);
   document.getElementById('p-name').value = '';
+  document.getElementById('p-unit').value = '';
   document.getElementById('p-import-price').value = '';
   document.getElementById('p-price').value = '';
   document.getElementById('p-note').value = '';
@@ -99,6 +101,7 @@ function editPriceItem(idx) {
   document.getElementById('price-edit-idx').value = idx;
   document.getElementById('p-stt').value = item.stt || (idx + 1);
   document.getElementById('p-name').value = item.name || '';
+  document.getElementById('p-unit').value = item.unit || '';
   document.getElementById('p-import-price').value = (item.importPrice !== null && item.importPrice !== undefined) ? item.importPrice : '';
   document.getElementById('p-price').value = item.price || 0;
   document.getElementById('p-note').value = item.note || '';
@@ -113,6 +116,7 @@ function savePriceItem() {
     return;
   }
 
+  const unit = document.getElementById('p-unit')?.value?.trim() || '';
   const rawImport = document.getElementById('p-import-price')?.value?.trim();
   const importPrice = rawImport !== '' ? parseFloat(rawImport) : null;
   const stt = parseInt(document.getElementById('p-stt')?.value) || (priceList.length + 1);
@@ -121,6 +125,7 @@ function savePriceItem() {
   const item = {
     stt,
     name,
+    unit,
     importPrice,
     price,
     note,
@@ -156,7 +161,7 @@ function clearPriceList() {
   toast('Đã xóa toàn bộ Bảng giá thuốc', 'info');
 }
 
-// Import Excel theo định dạng: STT, Tên thuốc, Giá nhập, Giá bán
+// Import Excel theo định dạng: STT, Tên thuốc, Đơn vị tính, Giá nhập, Giá bán
 async function importPriceList(input) {
   const file = input.files[0];
   if (!file) return;
@@ -178,7 +183,7 @@ async function importPriceList(input) {
     let headerRow = 0;
     for (let i = 0; i < Math.min(rows.length, 10); i++) {
       const r = rows[i].map(c => normalize(String(c)));
-      if (r.some(c => c.includes('ten') || c.includes('thuoc') || c.includes('gia') || c.includes('stt'))) {
+      if (r.some(c => c.includes('ten') || c.includes('thuoc') || c.includes('gia') || c.includes('stt') || c.includes('dvt'))) {
         headerRow = i;
         break;
       }
@@ -187,11 +192,12 @@ async function importPriceList(input) {
     const headers = rows[headerRow].map(c => normalize(String(c)));
     const sttCol = headers.findIndex(c => c.includes('stt') || c === 'no' || c === 'tt');
     const nameCol = headers.findIndex(c => c.includes('ten') && (c.includes('thuoc') || c.includes('hang') || c.includes('sp') || c.length < 15));
+    const unitCol = headers.findIndex(c => c.includes('don vi') || c.includes('dvt') || c.includes('unit'));
     const importPriceCol = headers.findIndex(c => (c.includes('nhap') || c.includes('von') || c.includes('cost')) && c.includes('gia'));
     const sellPriceCol = headers.findIndex(c => (c.includes('ban') || c.includes('le') || c.includes('retail')) && c.includes('gia'));
 
     const resolvedNameCol = nameCol >= 0 ? nameCol : 1;
-    const resolvedSellPriceCol = sellPriceCol >= 0 ? sellPriceCol : (headers.findIndex(c => c.includes('gia') && c !== importPriceCol) >= 0 ? headers.findIndex(c => c.includes('gia') && c !== importPriceCol) : 3);
+    const resolvedSellPriceCol = sellPriceCol >= 0 ? sellPriceCol : (headers.findIndex(c => c.includes('gia') && c !== importPriceCol) >= 0 ? headers.findIndex(c => c.includes('gia') && c !== importPriceCol) : (rows[headerRow].length - 1));
 
     let added = 0;
     let updated = 0;
@@ -203,6 +209,9 @@ async function importPriceList(input) {
 
       const rawStt = sttCol >= 0 ? parseInt(r[sttCol]) : 0;
       const stt = (!isNaN(rawStt) && rawStt > 0) ? rawStt : (priceList.length + 1);
+
+      // Đơn vị tính
+      const unit = unitCol >= 0 ? String(r[unitCol] || '').trim() : '';
 
       // Giá nhập (không bắt buộc, nếu có thì parse, không có thì để null)
       let importPrice = null;
@@ -222,6 +231,7 @@ async function importPriceList(input) {
       const existing = priceList.find(x => normalize(x.name) === normalize(name));
       if (existing) {
         existing.price = sellPrice;
+        if (unit) existing.unit = unit;
         if (importPrice !== null) existing.importPrice = importPrice;
         existing.updatedAt = new Date().toISOString();
         updated++;
@@ -229,6 +239,7 @@ async function importPriceList(input) {
         priceList.push({
           stt,
           name,
+          unit,
           importPrice,
           price: sellPrice,
           note: '',
@@ -249,29 +260,30 @@ async function importPriceList(input) {
   }
 }
 
-// Xuất file Excel Bảng giá thuốc
+// Xuất file Excel Bảng giá thuốc (gồm STT, Tên thuốc, Đơn vị tính, Giá nhập, Giá bán)
 function exportPriceList() {
   if (!priceList.length) {
     toast('Bảng giá thuốc đang trống!', 'warning');
     return;
   }
   const wb = XLSX.utils.book_new();
-  const headers = ['STT', 'Tên thuốc', 'Giá nhập', 'Giá bán'];
+  const headers = ['STT', 'Tên thuốc', 'Đơn vị tính', 'Giá nhập', 'Giá bán'];
   const rows = priceList.map((d, i) => [
     d.stt || (i + 1),
     d.name,
+    d.unit || '',
     d.importPrice !== null && d.importPrice !== undefined ? d.importPrice : '',
     d.price || 0
   ]);
   const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
-  ws['!cols'] = [{ wch: 8 }, { wch: 40 }, { wch: 16 }, { wch: 16 }];
+  ws['!cols'] = [{ wch: 8 }, { wch: 40 }, { wch: 14 }, { wch: 16 }, { wch: 16 }];
   XLSX.utils.book_append_sheet(wb, ws, 'Bang_Gia_Thuoc');
   XLSX.writeFile(wb, `bang_gia_thuoc_${new Date().toISOString().split('T')[0]}.xlsx`);
   toast('Đã xuất file Excel bảng giá thuốc!', 'success');
 }
 
 // ======================== TỰ ĐỘNG NHẬP GIÁ THUỐC ========================
-// Tính năng Nâng cấp 2: Tự động tra cứu và điền giá bán thuốc khi nhập hóa đơn mới
+// Tính năng: Tự động tra cứu và điền giá bán + ĐVT thuốc khi nhập hóa đơn mới
 function autoApplyPricesToCurrentInvoice() {
   if (!currentItems || !currentItems.length) {
     toast('Chưa có danh sách hàng nhập để điền giá bán!', 'warning');
@@ -285,6 +297,7 @@ function autoApplyPricesToCurrentInvoice() {
   currentItems.forEach((it, idx) => {
     if (!it.name) return;
     let foundPrice = null;
+    let foundUnit = null;
 
     // 1. Ưu tiên tìm trong Bảng giá thuốc (PriceList)
     let bestScore = 0;
@@ -299,12 +312,14 @@ function autoApplyPricesToCurrentInvoice() {
 
     if (bestScore >= 50 && bestPriceItem && bestPriceItem.price > 0) {
       foundPrice = bestPriceItem.price;
+      foundUnit = bestPriceItem.unit || null;
       fromPriceListCount++;
     } else {
       // 2. Dự phòng tìm trong Danh mục quầy (Catalog)
       const catMatch = findDrug(it.name);
       if (catMatch && catMatch.price > 0) {
         foundPrice = catMatch.price;
+        foundUnit = catMatch.unit || null;
         fromCatalogCount++;
       }
     }
@@ -312,6 +327,9 @@ function autoApplyPricesToCurrentInvoice() {
     // Gán giá bán nếu tìm được
     if (foundPrice !== null && foundPrice > 0) {
       currentItems[idx].sellprice = foundPrice;
+      if (!currentItems[idx].unit && foundUnit) {
+        currentItems[idx].unit = foundUnit;
+      }
       filledCount++;
     }
   });
@@ -324,4 +342,3 @@ function autoApplyPricesToCurrentInvoice() {
     toast('Không tìm thấy giá bán phù hợp trong Bảng giá và Danh mục cho các thuốc này!', 'info');
   }
 }
-

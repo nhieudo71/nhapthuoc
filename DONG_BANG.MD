@@ -54,7 +54,7 @@ Tất cả các module tương tác với `localStorage` qua các khóa có ti�
 5. `pi_settings`: Thông tin quầy (`name`, `shopcode`, `keeper`, `supplier`).
 6. `pi_apikey`: Khóa Google Gemini API Key.
 7. `pi_theme`: Giao diện sáng/tối (`'dark'` | `'light'`).
-8. `pi_pricelist`: Bảng giá thuốc mới (`stt`, `name`, `importPrice`, `price`, `note`, `updatedAt`).
+8. `pi_pricelist`: Bảng giá thuốc mới (`stt`, `name`, `unit`, `importPrice`, `price`, `note`, `updatedAt`).
 
 > ⚠️ **QUY TẮC BẢO VỆ:**  
 > - Bất kỳ trường dữ liệu nào mới được thêm vào phải có giá trị mặc định, không được làm crash các hàm đọc dữ liệu cũ.  

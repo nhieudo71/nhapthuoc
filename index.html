@@ -253,8 +253,8 @@
   <div class="content">
     <div class="info-box flex items-center justify-between flex-wrap gap-2">
       <div>
-        💡 <strong>Định dạng file Excel bảng giá thuốc:</strong> <code>STT</code>, <code>Tên thuốc</code>, <code>Giá nhập</code> (nếu chưa có thì để trống không bắt buộc), <code>Giá bán</code>.
-        Khi nhập hóa đơn mới, bạn chỉ cần bấm nút <strong>🎯 Tự nhập giá thuốc</strong> để tự động điền giá bán!
+        💡 <strong>Định dạng file Excel bảng giá thuốc:</strong> <code>STT</code>, <code>Tên thuốc</code>, <code>Đơn vị tính</code>, <code>Giá nhập</code> (nếu chưa có thì để trống không bắt buộc), <code>Giá bán</code>.
+        Khi nhập hóa đơn mới, bạn chỉ cần bấm nút <strong>🎯 Tự nhập giá thuốc</strong> để tự động điền giá bán và đơn vị tính!
       </div>
       <button class="btn btn-ghost btn-xs text-xs text-[var(--red2)]" onclick="clearPriceList()">🗑 Xóa bảng giá</button>
     </div>
@@ -262,13 +262,14 @@
     <div class="card">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px">
         <div class="card-title" style="margin:0">Danh sách thuốc trong bảng giá <span id="price-count" class="chip">0</span></div>
-        <div class="search-box"><span class="search-icon">🔍</span><input type="text" placeholder="Tìm tên thuốc..." id="price-search" oninput="priceListPage=0;renderPriceList()"></div>
+        <div class="search-box"><span class="search-icon">🔍</span><input type="text" placeholder="Tìm tên/ĐVT..." id="price-search" oninput="priceListPage=0;renderPriceList()"></div>
       </div>
       <div class="table-wrap">
         <table>
           <thead><tr>
             <th class="row-num">STT</th>
             <th>Tên thuốc</th>
+            <th style="min-width:70px">ĐVT</th>
             <th style="text-align:right">Giá nhập</th>
             <th style="text-align:right">Giá bán</th>
             <th class="hide-tablet">Ghi chú</th>
@@ -465,7 +466,10 @@
     <div class="modal-header"><div class="modal-title" id="price-modal-title">Thêm giá thuốc</div><button class="btn btn-ghost btn-sm" onclick="closeModal('modal-price')">✕</button></div>
     <div class="modal-body">
       <input type="hidden" id="price-edit-idx">
-      <div class="form-group"><label class="form-label">STT</label><input class="form-input td-mono" id="p-stt" type="number" min="1" placeholder="1"></div>
+      <div class="form-grid form-grid-2">
+        <div class="form-group"><label class="form-label">STT</label><input class="form-input td-mono" id="p-stt" type="number" min="1" placeholder="1"></div>
+        <div class="form-group"><label class="form-label">Đơn vị tính</label><input class="form-input" id="p-unit" placeholder="Viên / Hộp / Chai..."></div>
+      </div>
       <div class="form-group"><label class="form-label">Tên thuốc *</label><input class="form-input" id="p-name" placeholder="Tên thuốc đầy đủ"></div>
       <div class="form-grid form-grid-2">
         <div class="form-group"><label class="form-label">Giá nhập (không bắt buộc)</label><input class="form-input td-mono" id="p-import-price" type="number" placeholder="Để trống nếu chưa có" min="0"></div>

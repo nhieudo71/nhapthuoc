@@ -16,9 +16,9 @@
    - Chỉ cần nhập mã hóa đơn và bấm **📥 Tải vào app**, hệ thống tự động dò và mở ngay bảng thông tin phiếu nhập cùng danh sách mặt hàng trong ứng dụng.
 
 3. **Tab Bảng giá thuốc & Nút "🎯 Tự nhập giá thuốc":**
-   - Quản lý bảng giá niêm yết theo định dạng: `STT`, `Tên thuốc`, `Giá nhập` (không bắt buộc), `Giá bán`.
+   - Quản lý bảng giá niêm yết theo định dạng: `STT`, `Tên thuốc`, `Đơn vị tính`, `Giá nhập` (không bắt buộc), `Giá bán`.
    - Nhập/xuất file Excel bảng giá thuốc dễ dàng.
-   - Nút **🎯 Tự nhập giá thuốc** trên thanh công cụ Bước 3 tự động quét và điền giá bán cho toàn bộ sản phẩm trên hóa đơn mới chỉ với 1 click.
+   - Nút **🎯 Tự nhập giá thuốc** trên thanh công cụ Bước 3 tự động quét và điền giá bán + đơn vị tính cho toàn bộ sản phẩm trên hóa đơn mới chỉ với 1 click.
 
 4. **Quy đổi đơn vị đóng gói (Hộp/Thùng ➔ Viên/Lọ):**
    - Tự động nhận diện quy cách từ tên thuốc (VD: `T/56C/200V`, `v/10, H/50`, `H/100`).
@@ -107,7 +107,7 @@ Bạn có 2 cách nhập hóa đơn:
 ### Quản lý Bảng Giá Thuốc & Danh Mục
 
 - **Tab Bảng giá thuốc:**
-  - Nhập file Excel bảng giá thuốc gồm 4 cột: `STT`, `Tên thuốc`, `Giá nhập` (không bắt buộc), `Giá bán`.
+  - Nhập file Excel bảng giá thuốc gồm 5 cột: `STT`, `Tên thuốc`, `Đơn vị tính`, `Giá nhập` (không bắt buộc), `Giá bán`.
   - Giúp bạn quản lý bảng giá bán lẻ cố định của quầy thuốc.
 - **Tab Sao lưu & Phục hồi:**
   - Định kỳ bấm **⬇️ Tải file sao lưu** để tải file `.json` lưu về máy tính nhằm bảo vệ dữ liệu khi đổi trình duyệt hoặc cài lại máy.
