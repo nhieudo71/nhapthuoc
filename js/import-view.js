@@ -64,31 +64,31 @@ function renderItemsTable() {
     tr.innerHTML = `<td class="row-num">${i + 1}</td>
       <td>
         <div class="autocomplete-wrap">
-          <input class="form-input" style="min-width:150px;font-size:14px;padding:6px 8px" value="${esc(it.name)}" onchange="updateItem(${i},'name',this.value)" oninput="showDrugAC(${i},this)">
+          <input class="form-input" style="width:100%;min-width:130px;font-size:13.5px;padding:4px 6px;font-weight:600" value="${esc(it.name)}" onchange="updateItem(${i},'name',this.value)" oninput="showDrugAC(${i},this)">
           <div class="autocomplete-list" id="ac-${i}" style="display:none"></div>
         </div>
         ${it.code && it.matchSrc === 'cat'
-          ? `<div class="drug-match" style="font-size:12.5px">✓ <strong>${it.code}</strong> <span style="opacity:.65">(quầy)</span></div>`
+          ? `<div class="drug-match" style="font-size:11.5px;line-height:1.2;margin-top:2px">✓ <strong>${it.code}</strong> <span style="opacity:.65">(quầy)</span></div>`
           : it.code && it.matchSrc === 'nat'
-          ? `<div style="font-size:12.5px;color:var(--blue2);font-weight:600">✓ <strong>${it.code}</strong> <span style="opacity:.65">(DQG)</span></div>`
+          ? `<div style="font-size:11.5px;color:var(--blue2);font-weight:600;line-height:1.2;margin-top:2px">✓ <strong>${it.code}</strong> <span style="opacity:.65">(DQG)</span></div>`
           : it.code && it.matchSrc === 'ai'
-          ? `<div style="font-size:12.5px;color:var(--orange2);font-weight:600">🤖 <strong>${it.code}</strong> <span style="opacity:.65">(AI)</span></div>`
+          ? `<div style="font-size:11.5px;color:var(--orange2);font-weight:600;line-height:1.2;margin-top:2px">🤖 <strong>${it.code}</strong> <span style="opacity:.65">(AI)</span></div>`
           : it.code
-          ? `<div class="drug-match" style="font-size:12.5px">✓ ${it.code}</div>`
-          : `<div class="drug-nomatch">⚠ Chưa có mã</div>`}
+          ? `<div class="drug-match" style="font-size:11.5px;line-height:1.2;margin-top:2px">✓ ${it.code}</div>`
+          : `<div class="drug-nomatch" style="font-size:11.5px;line-height:1.2;margin-top:2px">⚠ Chưa có mã</div>`}
       </td>
-      <td><input class="form-input td-mono" style="width:88px;font-size:14px;padding:6px 8px" value="${esc(it.code)}" onchange="updateItem(${i},'code',this.value)" placeholder="Mã hàng"></td>
-      <td class="hide-mobile"><input class="form-input" style="width:66px;font-size:14px;padding:6px 8px" value="${esc(it.unit)}" onchange="updateItem(${i},'unit',this.value)"></td>
-      <td class="hide-mobile"><input class="form-input td-mono" style="width:78px;font-size:14px;padding:6px 8px" value="${esc(it.lot)}" onchange="updateItem(${i},'lot',this.value)"></td>
-      <td><input class="form-input" style="width:96px;font-size:14px;padding:6px 8px" value="${esc(it.expiry)}" onchange="updateItem(${i},'expiry',this.value)" placeholder="DD/MM/YYYY"></td>
-      <td><input class="form-input td-mono" style="width:66px;font-size:14px;padding:6px 8px;text-align:right" type="number" value="${it.qty || 0}" onchange="updateItem(${i},'qty',this.value)" min="0"></td>
-      <td><input class="form-input td-mono" style="width:96px;font-size:14px;padding:6px 8px;text-align:right" type="number" value="${it.price || 0}" onchange="updateItem(${i},'price',this.value)" step="0.01"></td>
-      <td class="hide-tablet"><input class="form-input td-mono" style="width:88px;font-size:14px;padding:6px 8px;text-align:right;color:var(--accent2);font-weight:700" type="number" value="${it.sellprice || 0}" onchange="updateItem(${i},'sellprice',this.value)" placeholder="Giá bán"></td>
-      <td class="hide-mobile"><input class="form-input" style="width:52px;font-size:14px;padding:6px 8px;text-align:right" type="number" value="${it.vat || 0}" onchange="updateItem(${i},'vat',this.value)" min="0"></td>
-      <td class="hide-tablet"><input class="form-input" style="width:52px;font-size:14px;padding:6px 8px;text-align:right" type="number" value="${it.discount || 0}" onchange="updateItem(${i},'discount',this.value)" min="0"></td>
-      <td class="td-mono" style="text-align:right;color:var(--accent2);font-weight:700;white-space:nowrap" id="amt-${i}">${fmtNum(amt)}</td>
-      <td>${it.packConverted ? `<span class="btn btn-outline btn-xs" style="padding:4px 7px;font-size:13px" onclick="openPackConvert(${i})" title="Đã quy đổi: ${it.packOrigUnit || ''} → ${it.unit || ''} (x${it.packSize || 1}), lãi +${it.packMarkup != null ? it.packMarkup : 15}%">✅📦</span>` : `<span class="btn btn-outline btn-xs" style="padding:4px 7px;font-size:13px" onclick="openPackConvert(${i})" title="Quy đổi đơn vị đóng gói">📦</span>`}</td>
-      <td><span class="delete-row" onclick="removeRow(${i})">✕</span></td>`;
+      <td><input class="form-input td-mono" style="width:100%;font-size:13px;padding:4px 6px" value="${esc(it.code)}" onchange="updateItem(${i},'code',this.value)" placeholder="Mã hàng"></td>
+      <td class="hide-mobile"><input class="form-input" style="width:100%;font-size:13px;padding:4px 4px;text-align:center" value="${esc(it.unit)}" onchange="updateItem(${i},'unit',this.value)" placeholder="ĐVT"></td>
+      <td class="hide-mobile"><input class="form-input td-mono" style="width:100%;font-size:13px;padding:4px 6px" value="${esc(it.lot)}" onchange="updateItem(${i},'lot',this.value)" placeholder="Số lô"></td>
+      <td><input class="form-input" style="width:100%;font-size:13px;padding:4px 5px;text-align:center" value="${esc(it.expiry)}" onchange="updateItem(${i},'expiry',this.value)" placeholder="HSD"></td>
+      <td><input class="form-input td-mono" style="width:100%;font-size:13.5px;padding:4px 4px;text-align:right;font-weight:600" type="number" value="${it.qty || 0}" onchange="updateItem(${i},'qty',this.value)" min="0"></td>
+      <td><input class="form-input td-mono" style="width:100%;font-size:13px;padding:4px 5px;text-align:right" type="number" value="${it.price || 0}" onchange="updateItem(${i},'price',this.value)" step="0.01"></td>
+      <td class="hide-tablet"><input class="form-input td-mono" style="width:100%;font-size:13px;padding:4px 5px;text-align:right;color:var(--accent2);font-weight:700" type="number" value="${it.sellprice || 0}" onchange="updateItem(${i},'sellprice',this.value)" placeholder="Giá bán"></td>
+      <td class="hide-mobile"><input class="form-input" style="width:100%;font-size:13px;padding:4px 3px;text-align:right" type="number" value="${it.vat || 0}" onchange="updateItem(${i},'vat',this.value)" min="0"></td>
+      <td class="hide-tablet"><input class="form-input" style="width:100%;font-size:13px;padding:4px 3px;text-align:right" type="number" value="${it.discount || 0}" onchange="updateItem(${i},'discount',this.value)" min="0"></td>
+      <td class="td-mono" style="text-align:right;color:var(--accent2);font-weight:700;white-space:nowrap;font-size:14px;padding:4px 6px" id="amt-${i}">${fmtNum(amt)}</td>
+      <td style="text-align:center">${it.packConverted ? `<span class="btn btn-outline btn-xs" style="padding:2px 5px;font-size:12px" onclick="openPackConvert(${i})" title="Đã quy đổi: ${it.packOrigUnit || ''} → ${it.unit || ''} (x${it.packSize || 1}), lãi +${it.packMarkup != null ? it.packMarkup : 15}%">✅📦</span>` : `<span class="btn btn-outline btn-xs" style="padding:2px 5px;font-size:12px" onclick="openPackConvert(${i})" title="Quy đổi đơn vị đóng gói">📦</span>`}</td>
+      <td style="text-align:center"><span class="delete-row" style="padding:2px 5px;font-size:14px" onclick="removeRow(${i})">✕</span></td>`;
     tbody.appendChild(tr);
   });
 

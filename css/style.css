@@ -125,7 +125,7 @@ input,button,select,textarea{font-family:inherit}
 .progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:5px;transition:width .35s}
 .progress-text{font-size:14px;color:var(--text3);margin-top:6px;font-weight:500}
 
-/* TABLE */
+/* TABLE & COMPACT INVOICE TABLE */
 .table-wrap{overflow-x:auto;border-radius:var(--radius2);border:1px solid var(--border)}
 table{width:100%;border-collapse:collapse;font-size:15px}
 thead{position:sticky;top:0;z-index:10}
@@ -134,6 +134,12 @@ td{padding:8px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
 tr:last-child td{border-bottom:none}
 tr:hover td{background:var(--bg3)}
 .td-mono{font-family:'JetBrains Mono',monospace;font-size:14px}
+
+/* Bảng phiếu nhập gọn gàng không bị tràn màn hình */
+.compact-invoice-table{table-layout:fixed;width:100%}
+.compact-invoice-table th{padding:8px 5px;font-size:12px;letter-spacing:0}
+.compact-invoice-table td{padding:5px 4px}
+.compact-invoice-table .form-input{padding:4px 5px;border-radius:6px}
 
 /* FORMS */
 .form-group{margin-bottom:12px}
