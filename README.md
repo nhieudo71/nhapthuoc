@@ -20,10 +20,12 @@
      - Sau khi kiểm tra trực quan, bấm **✅ Xác nhận & Nhập vào phiếu nhập hàng** để tự động nạp toàn bộ vào hệ thống.
    - Tự động lưu lịch sử các mã đã tra cứu gần đây để bấm nạp lại nhanh chóng mà không cần gõ lại.
 
-3. **Tab Bảng giá thuốc & Nút "🎯 Tự nhập giá thuốc":**
+3. **Tab Bảng giá thuốc & Các tính năng chia sẻ dữ liệu liên thông:**
    - Quản lý bảng giá niêm yết theo định dạng: `STT`, `Tên thuốc`, `Đơn vị tính`, `Giá nhập` (không bắt buộc), `Giá bán`.
-   - Nhập/xuất file Excel bảng giá thuốc dễ dàng.
-   - Nút **🎯 Tự nhập giá thuốc** trên thanh công cụ Bước 3 tự động quét và điền giá bán + đơn vị tính cho toàn bộ sản phẩm trên hóa đơn mới chỉ với 1 click.
+   - **Nút "📥 Nhập giá bán":** Tự động liên thông quét qua toàn bộ các hóa đơn đã nhập trong hệ thống, tìm đơn giá nhập theo tên thuốc để tự động điền vào cột Giá nhập (và gợi ý giá bán nếu chưa có) trong Bảng giá thuốc.
+   - **Nút "📦 Nhập đơn vị tính":** Tự động quét từ Danh mục thuốc quầy và lịch sử hóa đơn để điền đầy đủ ĐVT (viên, hộp, vỉ, chai...) cho các thuốc còn thiếu trong Bảng giá.
+   - **Nút "🎯 Tự nhập giá thuốc":** Trên thanh công cụ Bước 3 của phiếu nhập mới, chỉ với 1 click sẽ tự động quét và điền giá bán + đơn vị tính cho toàn bộ sản phẩm trên hóa đơn mới.
+   - Hỗ trợ xuất/nhập file Excel bảng giá thuốc tương thích hoàn toàn.
 
 4. **Quy đổi đơn vị đóng gói (Hộp/Thùng ➔ Viên/Lọ):**
    - Tự động nhận diện quy cách từ tên thuốc (VD: `T/56C/200V`, `v/10, H/50`, `H/100`).

@@ -282,6 +282,192 @@ function exportPriceList() {
   toast('Đã xuất file Excel bảng giá thuốc!', 'success');
 }
 
+// ======================== CHIA SẺ & ĐỒNG BỘ DỮ LIỆU QUA LẠI ========================
+
+// 1. "Nhập giá bán": Lấy giá nhập từ các hóa đơn đã nhập vào Bảng giá thuốc theo tên thuốc
+function syncImportPricesToPriceList() {
+  if (!records.length && (!currentItems || !currentItems.length)) {
+    toast('Chưa có hóa đơn nào trong hệ thống để lấy giá nhập!', 'warning');
+    return;
+  }
+
+  // Thu thập bản đồ giá nhập mới nhất cho từng tên thuốc từ tất cả hóa đơn đã lưu (ưu tiên hóa đơn gần nhất)
+  // và từ hóa đơn đang mở hiện tại
+  const priceMap = new Map(); // normalizedName -> { importPrice, unit, name, date }
+
+  // Quét qua các phiếu nhập đã lưu (từ cũ đến mới để cái mới nhất ghi đè)
+  records.forEach(rec => {
+    if (rec.items && Array.isArray(rec.items)) {
+      rec.items.forEach(it => {
+        if (!it.name) return;
+        const norm = normalize(it.name);
+        const p = parseFloat(it.price);
+        if (!isNaN(p) && p > 0) {
+          priceMap.set(norm, {
+            importPrice: p,
+            unit: it.unit || '',
+            originalName: it.name,
+            date: rec.date || ''
+          });
+        }
+      });
+    }
+  });
+
+  // Quét thêm hóa đơn hiện đang mở trên màn hình nhập
+  if (currentItems && currentItems.length) {
+    currentItems.forEach(it => {
+      if (!it.name) return;
+      const norm = normalize(it.name);
+      const p = parseFloat(it.price);
+      if (!isNaN(p) && p > 0) {
+        priceMap.set(norm, {
+          importPrice: p,
+          unit: it.unit || '',
+          originalName: it.name,
+          date: new Date().toISOString()
+        });
+      }
+    });
+  }
+
+  if (priceMap.size === 0) {
+    toast('Không tìm thấy dữ liệu đơn giá nhập hợp lệ trong các hóa đơn!', 'info');
+    return;
+  }
+
+  let updatedCount = 0;
+  let addedCount = 0;
+
+  // Cập nhật vào Bảng giá thuốc (priceList)
+  priceList.forEach(item => {
+    const norm = normalize(item.name);
+    // So khớp chính xác hoặc fuzzy matching
+    let matchedData = priceMap.get(norm);
+    if (!matchedData) {
+      // Thử tìm theo điểm khớp cao nhất (scoreDrug >= 60)
+      let bestScore = 0;
+      for (const [key, val] of priceMap.entries()) {
+        const s = scoreDrug(item.name, val.originalName);
+        if (s > bestScore) {
+          bestScore = s;
+          matchedData = val;
+        }
+      }
+      if (bestScore < 60) matchedData = null;
+    }
+
+    if (matchedData) {
+      // Cập nhật giá nhập
+      item.importPrice = matchedData.importPrice;
+      // Nếu giá bán chưa có hoặc bằng 0, có thể gợi ý tính giá bán = giá nhập * 1.15
+      if (!item.price || item.price === 0) {
+        item.price = Math.round((matchedData.importPrice * 1.15) / 100) * 100;
+      }
+      if (!item.unit && matchedData.unit) {
+        item.unit = matchedData.unit;
+      }
+      item.updatedAt = new Date().toISOString();
+      updatedCount++;
+    }
+  });
+
+  // Nếu bảng giá đang trống, tự động nạp toàn bộ danh mục thuốc từ hóa đơn vào bảng giá
+  if (priceList.length === 0) {
+    let stt = 1;
+    for (const [norm, val] of priceMap.entries()) {
+      priceList.push({
+        stt: stt++,
+        name: val.originalName,
+        unit: val.unit || '',
+        importPrice: val.importPrice,
+        price: Math.round((val.importPrice * 1.15) / 100) * 100, // Tự động gợi ý giá bán lãi 15%
+        note: 'Tự nạp từ hóa đơn',
+        updatedAt: new Date().toISOString()
+      });
+      addedCount++;
+    }
+  }
+
+  DB.set('pricelist', priceList);
+  renderPriceList();
+
+  if (updatedCount > 0 || addedCount > 0) {
+    toast(`✅ Đã nạp giá nhập từ hóa đơn vào Bảng giá: Cập nhật ${updatedCount} thuốc${addedCount ? `, thêm mới ${addedCount} thuốc` : ''}!`, 'success');
+  } else {
+    toast('Không có tên thuốc nào trong Bảng giá trùng khớp với các hóa đơn đã nhập.', 'info');
+  }
+}
+
+// 2. "Nhập đơn vị tính": Đồng bộ ĐVT (viên, hộp, vỉ, chai...) từ hóa đơn và danh mục quầy vào Bảng giá thuốc
+function syncUnitsToPriceList() {
+  if (!priceList.length) {
+    toast('Bảng giá thuốc đang trống! Hãy thêm thuốc hoặc import Excel trước.', 'warning');
+    return;
+  }
+
+  // Thu thập đơn vị tính từ Danh mục quầy (catalog) và từ các hóa đơn (records + currentItems)
+  const unitMap = new Map(); // normalizedName -> unit
+
+  // 1. Từ Catalog
+  catalog.forEach(d => {
+    if (d.name && d.unit) {
+      unitMap.set(normalize(d.name), d.unit.trim());
+    }
+  });
+
+  // 2. Từ các hóa đơn đã lưu
+  records.forEach(rec => {
+    if (rec.items) {
+      rec.items.forEach(it => {
+        if (it.name && it.unit) {
+          unitMap.set(normalize(it.name), it.unit.trim());
+        }
+      });
+    }
+  });
+
+  // 3. Từ hóa đơn hiện tại
+  if (currentItems) {
+    currentItems.forEach(it => {
+      if (it.name && it.unit) {
+        unitMap.set(normalize(it.name), it.unit.trim());
+      }
+    });
+  }
+
+  let updatedCount = 0;
+  priceList.forEach(item => {
+    let foundUnit = unitMap.get(normalize(item.name));
+    if (!foundUnit) {
+      // Thử tìm theo matching tương đối
+      let bestScore = 0;
+      for (const [key, unitVal] of unitMap.entries()) {
+        const s = scoreDrug(item.name, key);
+        if (s > bestScore) {
+          bestScore = s;
+          foundUnit = unitVal;
+        }
+      }
+      if (bestScore < 60) foundUnit = null;
+    }
+
+    if (foundUnit && (!item.unit || item.unit === '—' || item.unit === '')) {
+      item.unit = foundUnit;
+      item.updatedAt = new Date().toISOString();
+      updatedCount++;
+    }
+  });
+
+  if (updatedCount > 0) {
+    DB.set('pricelist', priceList);
+    renderPriceList();
+    toast(`📦 Đã tự động cập nhật Đơn vị tính cho ${updatedCount} thuốc trong Bảng giá!`, 'success');
+  } else {
+    toast('Tất cả thuốc trong Bảng giá đã có đơn vị tính hoặc không tìm thấy ĐVT tương ứng.', 'info');
+  }
+}
+
 // ======================== TỰ ĐỘNG NHẬP GIÁ THUỐC ========================
 // Tính năng: Tự động tra cứu và điền giá bán + ĐVT thuốc khi nhập hóa đơn mới
 function autoApplyPricesToCurrentInvoice() {

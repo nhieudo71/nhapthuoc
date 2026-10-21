@@ -35,7 +35,14 @@
   - *Sheet 3:* `Hướng dẫn` (Quy định bắt buộc theo mẫu của VNPT).
 - [x] Xuất đúng file định dạng `.xls` tương thích mọi phiên bản VNPT.
 
-### 1.5. Module Quản Lý Dữ Liệu Cục Bộ (`js/db.js`, `js/catalog.js`, `js/national.js`, `js/suppliers.js`, `js/records.js`)
+### 1.5. Module Bảng Giá & Liên Thông Chia Sẻ Dữ Liệu (`js/pricelist.js`)
+- [x] **Cơ chế liên thông đa chiều:**
+  - *Nút "Nhập giá bán":* Tự động quét toàn bộ hóa đơn đã nhập để nạp đơn giá nhập mới nhất vào bảng giá thuốc theo tên thuốc.
+  - *Nút "Nhập đơn vị tính":* Tự động bổ sung ĐVT từ danh mục quầy và các hóa đơn vào bảng giá thuốc.
+  - *Nút "Tự nhập giá thuốc":* Tự động điền giá bán và ĐVT từ bảng giá vào hóa đơn đang nhập.
+- [x] **Quản lý Bảng giá:** CRUD, tìm kiếm, Import/Export Excel.
+
+### 1.6. Module Quản Lý Dữ Liệu Cục Bộ (`js/db.js`, `js/catalog.js`, `js/national.js`, `js/suppliers.js`, `js/records.js`)
 - [x] **Danh mục thuốc quầy:** CRUD, tìm kiếm, import Excel tự động loại trừ trùng lặp.
 - [x] **Dược quốc gia:** Phân trang ảo (Pagination) 50 dòng/trang, import chunk 500 dòng tránh đơ trình duyệt, cơ chế lưu trữ rút gọn (slim storage) khi dung lượng LocalStorage chạm ngưỡng quota.
 - [x] **Nhà cung cấp:** CRUD, autocomplete theo mã hoặc tên khi lập hóa đơn.

@@ -339,7 +339,13 @@
     </div>
     <div class="topbar-actions">
       <button class="theme-toggle" onclick="toggleTheme()" id="theme-btn-price"><span class="toggle-icon" id="theme-icon8">🌙</span></button>
-      <button class="btn btn-outline btn-sm" onclick="document.getElementById('price-file-input').click()">📥 <span class="btn-label-sm">Import Excel</span></button>
+      <button class="btn btn-outline btn-sm" onclick="syncImportPricesToPriceList()" title="Lấy giá nhập từ hóa đơn đã lưu vào bảng giá thuốc theo tên thuốc">
+        📥 <span class="btn-label-sm">Nhập giá bán</span>
+      </button>
+      <button class="btn btn-outline btn-sm" onclick="syncUnitsToPriceList()" title="Lấy Đơn vị tính từ hóa đơn và danh mục vào bảng giá thuốc">
+        📦 <span class="btn-label-sm">Nhập đơn vị tính</span>
+      </button>
+      <button class="btn btn-outline btn-sm" onclick="document.getElementById('price-file-input').click()">📁 <span class="btn-label-sm">Import Excel</span></button>
       <input type="file" id="price-file-input" accept=".xls,.xlsx,.csv" style="display:none" onchange="importPriceList(this)">
       <button class="btn btn-outline btn-sm" onclick="exportPriceList()">⬇️ <span class="btn-label-sm">Xuất Excel</span></button>
       <button class="btn btn-primary btn-sm" onclick="showAddPriceItem()">+ <span class="btn-label-sm">Thêm giá thuốc</span></button>
@@ -348,7 +354,9 @@
   <div class="content">
     <div class="info-box flex items-center justify-between flex-wrap gap-2">
       <div>
-        💡 <strong>Định dạng file Excel bảng giá thuốc:</strong> <code>STT</code>, <code>Tên thuốc</code>, <code>Đơn vị tính</code>, <code>Giá nhập</code> (nếu chưa có thì để trống không bắt buộc), <code>Giá bán</code>.
+        💡 <strong>Liên kết dữ liệu thông minh:</strong>
+        Bấm <strong>📥 Nhập giá bán</strong> để tự động lấy đơn giá từ các hóa đơn đã nhập điền vào Bảng giá thuốc; 
+        bấm <strong>📦 Nhập đơn vị tính</strong> để tự động bổ sung ĐVT (viên, hộp, chai...) theo tên thuốc.
         Khi nhập hóa đơn mới, bạn chỉ cần bấm nút <strong>🎯 Tự nhập giá thuốc</strong> để tự động điền giá bán và đơn vị tính!
       </div>
       <button class="btn btn-ghost btn-xs text-xs text-[var(--red2)]" onclick="clearPriceList()">🗑 Xóa bảng giá</button>
