@@ -19,7 +19,7 @@ function renderCatalog() {
       <td class="hide-mobile">${esc(d.unit || '')}</td>
       <td class="td-mono" style="color:var(--accent2);font-weight:700">${fmtNum(d.price || 0)}</td>
       <td class="hide-mobile">${d.vat || 0}%</td>
-      <td class="hide-tablet" style="color:var(--text3);font-size:12px">${esc(d.note || '')}</td>
+      <td class="hide-tablet" style="color:var(--text3);font-size:14px">${esc(d.note || '')}</td>
       <td style="text-align:right">
         <button class="btn btn-ghost btn-xs" onclick="editDrug(${ri})">✏️</button>
         <button class="btn btn-ghost btn-xs" onclick="deleteDrug(${ri})" style="color:var(--red2)">✕</button>

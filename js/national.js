@@ -54,14 +54,14 @@ function renderNational() {
             <td class="row-num">${offset + i + 1}</td>
             <td class="td-mono">${esc(d.code || '—')}</td>
             <td><strong>${esc(d.name)}</strong></td>
-            <td class="hide-mobile" style="font-size:12px;color:var(--text3)">${esc(d.active || '')}</td>
-            <td class="hide-tablet" style="font-size:12px;color:var(--text3)">${esc(d.form || '')}</td>
+            <td class="hide-mobile" style="font-size:14px;color:var(--text3)">${esc(d.active || '')}</td>
+            <td class="hide-tablet" style="font-size:14px;color:var(--text3)">${esc(d.form || '')}</td>
           </tr>`).join('')}
         </tbody>
       </table>
     </div>
     <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;padding:10px 4px 2px">
-      <div style="font-size:12px;color:var(--text3);font-weight:600">
+      <div style="font-size:14px;color:var(--text3);font-weight:600">
         Trang ${natPage + 1}/${totalPages} &nbsp;·&nbsp; ${filtered.length.toLocaleString('vi-VN')} kết quả${q ? ' (đang lọc)' : ''}
       </div>
       <div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap">

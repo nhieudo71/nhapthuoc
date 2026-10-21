@@ -37,10 +37,10 @@ function renderPriceList() {
     return `<tr>
       <td class="row-num">${d.stt || (offset + i + 1)}</td>
       <td><strong>${esc(d.name)}</strong></td>
-      <td><span class="chip" style="font-size:11px">${esc(d.unit || '—')}</span></td>
+      <td><span class="chip" style="font-size:13px">${esc(d.unit || '—')}</span></td>
       <td class="td-mono" style="text-align:right">${importPriceText}</td>
       <td class="td-mono" style="text-align:right;color:var(--accent2);font-weight:700">${priceText}</td>
-      <td class="hide-tablet" style="color:var(--text3);font-size:12px">${esc(d.note || '')}</td>
+      <td class="hide-tablet" style="color:var(--text3);font-size:14px">${esc(d.note || '')}</td>
       <td style="text-align:right">
         <button class="btn btn-ghost btn-xs" onclick="editPriceItem(${realIdx})">✏️</button>
         <button class="btn btn-ghost btn-xs" onclick="deletePriceItem(${realIdx})" style="color:var(--red2)">✕</button>
@@ -55,11 +55,11 @@ function renderPricePagination(current, total, totalCount = 0) {
   const container = document.getElementById('price-pagination');
   if (!container) return;
   if (total <= 1) {
-    container.innerHTML = totalCount ? `<div style="font-size:12px;color:var(--text3)">Tổng cộng: ${totalCount} thuốc</div>` : '';
+    container.innerHTML = totalCount ? `<div style="font-size:14px;color:var(--text3)">Tổng cộng: ${totalCount} thuốc</div>` : '';
     return;
   }
 
-  let html = `<div style="font-size:12px;color:var(--text3)">Trang ${current + 1}/${total} (${totalCount} thuốc)</div><div style="display:flex;gap:4px">`;
+  let html = `<div style="font-size:14px;color:var(--text3)">Trang ${current + 1}/${total} (${totalCount} thuốc)</div><div style="display:flex;gap:4px">`;
   html += `<button class="btn btn-outline btn-xs" onclick="goPricePage(${current - 1})" ${current === 0 ? 'disabled' : ''}>‹</button>`;
   
   const windowSize = 2;

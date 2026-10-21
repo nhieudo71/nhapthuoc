@@ -9,8 +9,8 @@ function renderSuppliers() {
     <td class="td-mono">${esc(s.code || '')}</td>
     <td><strong>${esc(s.name)}</strong></td>
     <td class="hide-mobile">${esc(s.phone || '')}</td>
-    <td class="hide-tablet" style="font-size:12px;color:var(--text3)">${esc(s.addr || '')}</td>
-    <td class="hide-tablet" style="font-size:12px;color:var(--text3)">${esc(s.note || '')}</td>
+    <td class="hide-tablet" style="font-size:14px;color:var(--text3)">${esc(s.addr || '')}</td>
+    <td class="hide-tablet" style="font-size:14px;color:var(--text3)">${esc(s.note || '')}</td>
     <td style="text-align:right">
       <button class="btn btn-ghost btn-xs" onclick="editSupplier(${i})">✏️</button>
       <button class="btn btn-ghost btn-xs" onclick="deleteSupplier(${i})" style="color:var(--red2)">✕</button>

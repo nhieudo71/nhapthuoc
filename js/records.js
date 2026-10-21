@@ -20,12 +20,12 @@ function renderRecords() {
     const ri = records.indexOf(r);
     return `<div class="record-item" onclick="viewRecord(${ri})">
       <div class="record-info">
-        <div class="record-num">📋 <strong>${r.code || '—'}</strong> ${r.invoiceNum ? `<span class="chip" style="font-size:10px">HĐ: ${esc(r.invoiceNum)}</span>` : ''}</div>
+        <div class="record-num">📋 <strong>${r.code || '—'}</strong> ${r.invoiceNum ? `<span class="chip" style="font-size:12px">HĐ: ${esc(r.invoiceNum)}</span>` : ''}</div>
         <div class="record-date">📅 ${r.date || '—'} &nbsp;·&nbsp; 👤 ${esc(r.keeper || '—')} &nbsp;·&nbsp; 🏪 ${esc(r.warehouse || '—')} &nbsp;·&nbsp; 💊 ${(r.items || []).length} sp</div>
       </div>
       <div style="text-align:right;margin-right:10px;flex-shrink:0">
         <div class="record-amount">${fmtNum(total)}</div>
-        <div style="font-size:10.5px;color:var(--text3)">VNĐ</div>
+        <div style="font-size:12.5px;color:var(--text3)">VNĐ</div>
       </div>
       <button class="btn btn-outline btn-xs hide-mobile" onclick="event.stopPropagation();editRecord(${ri})">✏️ Sửa</button>
       <button class="btn btn-outline btn-xs hide-mobile" onclick="event.stopPropagation();exportRecordVNPT(${ri})">⬇️ Xuất</button>
@@ -115,7 +115,7 @@ function viewRecord(idx) {
         </tbody>
       </table>
     </div>
-    <div style="text-align:right;margin-top:12px;font-weight:800;font-size:15px">
+    <div style="text-align:right;margin-top:12px;font-weight:800;font-size:17px">
       Tổng: <span style="color:var(--accent2)">${fmtNum(total)} đ</span>
     </div>`;
   }

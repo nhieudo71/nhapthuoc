@@ -146,7 +146,7 @@
 
     <!-- Bước 2: Thông tin phiếu nhập -->
     <div class="card" id="invoice-section" style="display:none">
-      <div class="card-title">📋 Bước 2 — Thông tin phiếu nhập <span style="font-size:11px;color:var(--text3);font-weight:500">(Sheet 1 — VNPT)</span></div>
+      <div class="card-title">📋 Bước 2 — Thông tin phiếu nhập <span style="font-size:13px;color:var(--text3);font-weight:500">(Sheet 1 — VNPT)</span></div>
       <div class="form-grid form-grid-3">
         <div class="form-group"><label class="form-label">Ngày nhập *</label><input type="date" class="form-input" id="inp-date" required></div>
         <div class="form-group"><label class="form-label">Mã phiếu nhập *</label><input type="text" inputmode="numeric" pattern="[0-9]*" class="form-input" id="inp-code" placeholder="Tự động nếu để trống" oninput="this.value=this.value.replace(/[^0-9]/g,'')"></div>
@@ -171,9 +171,9 @@
     <!-- Bước 3: Danh sách hàng nhập & Nút Tự nhập giá thuốc -->
     <div class="card" id="items-section" style="display:none">
       <div class="card-title" style="justify-content:space-between;flex-wrap:wrap;gap:8px">
-        <span>💊 Bước 3 — Danh sách hàng nhập <span style="font-size:11px;color:var(--text3);font-weight:500">(Sheet 2 — VNPT)</span></span>
+        <span>💊 Bước 3 — Danh sách hàng nhập <span style="font-size:13px;color:var(--text3);font-weight:500">(Sheet 2 — VNPT)</span></span>
         <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-          <span id="items-stats" style="font-size:12px;color:var(--text3);font-weight:600"></span>
+          <span id="items-stats" style="font-size:14px;color:var(--text3);font-weight:600"></span>
           <!-- Nút Tự Nhập Giá Thuốc -->
           <button class="btn btn-amber btn-sm" onclick="autoApplyPricesToCurrentInvoice()" title="Tự động tra cứu và điền giá bán từ Bảng giá thuốc">
             🎯 <span class="btn-label-sm">Tự nhập giá thuốc</span>
@@ -206,9 +206,9 @@
           </tr></thead>
           <tbody id="items-body"></tbody>
           <tfoot><tr>
-            <td colspan="9" class="hide-tablet" style="text-align:right;font-weight:700;color:var(--text2);font-size:11px;text-transform:uppercase;letter-spacing:.5px">Tổng cộng</td>
+            <td colspan="9" class="hide-tablet" style="text-align:right;font-weight:700;color:var(--text2);font-size:13px;text-transform:uppercase;letter-spacing:.5px">Tổng cộng</td>
             <td colspan="2" class="hide-desktop"></td>
-            <td class="td-mono" style="text-align:right;color:var(--accent2);font-weight:800;font-size:13px" id="total-cell">0</td>
+            <td class="td-mono" style="text-align:right;color:var(--accent2);font-weight:800;font-size:15px" id="total-cell">0</td>
             <td></td>
           </tr></tfoot>
         </table>
@@ -396,12 +396,12 @@
     <div class="split">
       <div class="card">
         <div class="card-title">📤 Sao lưu dữ liệu</div>
-        <p style="color:var(--text3);font-size:13px;margin-bottom:14px">Xuất toàn bộ dữ liệu (phiếu nhập, bảng giá, danh mục, NCC) ra file JSON để lưu trữ.</p>
+        <p style="color:var(--text3);font-size:15px;margin-bottom:14px">Xuất toàn bộ dữ liệu (phiếu nhập, bảng giá, danh mục, NCC) ra file JSON để lưu trữ.</p>
         <button class="btn btn-primary" onclick="backupData()">⬇️ Tải file sao lưu</button>
       </div>
       <div class="card">
         <div class="card-title">📥 Phục hồi dữ liệu</div>
-        <p style="color:var(--text3);font-size:13px;margin-bottom:14px">Tải lại từ file sao lưu JSON. Dữ liệu hiện tại sẽ được thay thế.</p>
+        <p style="color:var(--text3);font-size:15px;margin-bottom:14px">Tải lại từ file sao lưu JSON. Dữ liệu hiện tại sẽ được thay thế.</p>
         <button class="btn btn-outline" onclick="document.getElementById('restore-file').click()">📂 Chọn file phục hồi</button>
         <input type="file" id="restore-file" accept=".json" style="display:none" onchange="restoreData(this)">
       </div>
@@ -409,7 +409,7 @@
     <div class="card"><div class="card-title">📊 Thông tin lưu trữ</div><div id="storage-info"></div></div>
     <div class="card" style="border-color:rgba(220,38,38,.3)">
       <div class="card-title" style="color:var(--red2)">⚠️ Vùng nguy hiểm</div>
-      <p style="color:var(--text3);font-size:13px;margin-bottom:14px">Xóa toàn bộ dữ liệu không thể phục hồi nếu chưa sao lưu.</p>
+      <p style="color:var(--text3);font-size:15px;margin-bottom:14px">Xóa toàn bộ dữ liệu không thể phục hồi nếu chưa sao lưu.</p>
       <button class="btn btn-danger" onclick="clearAllData()">🗑 Xóa toàn bộ dữ liệu</button>
     </div>
   </div>
@@ -450,7 +450,7 @@
         <button class="btn btn-primary" onclick="saveAPIKey()">💾 Lưu API Key</button>
         <button class="btn btn-outline" onclick="testAPIKey()" id="btn-test-key">🔍 Kiểm tra Key</button>
       </div>
-      <div id="apikey-test-result" style="margin-top:10px;font-size:13px"></div>
+      <div id="apikey-test-result" style="margin-top:10px;font-size:15px"></div>
     </div>
   </div>
 </div>
@@ -541,8 +541,8 @@
     <div class="modal-header"><div class="modal-title">📦 Quy đổi đơn vị đóng gói</div><button class="btn btn-ghost btn-sm" onclick="closeModal('modal-pack')">✕</button></div>
     <div class="modal-body">
       <div class="info-box" style="margin-bottom:14px">💡 Hóa đơn ghi theo <strong>đơn vị lớn</strong> (hộp/thùng) nhưng nhập kho theo <strong>đơn vị bán lẻ</strong> (viên/chai/tuýp). Nhập quy cách để tự tính lại số lượng, đơn giá và giá bán theo % lãi bạn chọn.</div>
-      <div style="font-size:13px;font-weight:700;margin-bottom:6px" id="pack-item-name">—</div>
-      <div id="pack-guess-hint" style="font-size:12px;color:var(--orange2);font-weight:600;margin-bottom:10px"></div>
+      <div style="font-size:15px;font-weight:700;margin-bottom:6px" id="pack-item-name">—</div>
+      <div id="pack-guess-hint" style="font-size:14px;color:var(--orange2);font-weight:600;margin-bottom:10px"></div>
       <div class="form-group"><label class="form-label">Đơn vị lớn trên hóa đơn (VD: Hộp)</label><input class="form-input" id="pack-unit-big" placeholder="Hộp"></div>
       <div class="form-group"><label class="form-label">Đơn vị nhỏ nhập kho (VD: Viên, Chai, Tuýp)</label><input class="form-input" id="pack-unit-small" placeholder="Viên"></div>
       <div class="form-group"><label class="form-label">Quy cách đóng gói — 1 <span id="pack-unit-big-lbl">đơn vị lớn</span> = bao nhiêu <span id="pack-unit-small-lbl">đơn vị nhỏ</span>? *</label><input class="form-input" id="pack-size" type="number" min="1" placeholder="VD: 100"></div>
@@ -552,7 +552,7 @@
         <div class="form-group"><label class="form-label">Đơn giá trên hóa đơn</label><input class="form-input td-mono" id="pack-price-big" type="number" min="0" step="0.01"></div>
       </div>
       <div class="form-group"><label class="form-label">% lãi tính giá bán (mặc định 15%)</label><input class="form-input td-mono" id="pack-markup" type="number" min="0" step="0.1" value="15"></div>
-      <div id="pack-preview" style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:12px;font-size:13px;line-height:1.9;margin-top:6px"></div>
+      <div id="pack-preview" style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:12px;font-size:15px;line-height:1.9;margin-top:6px"></div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal('modal-pack')">Hủy</button>
