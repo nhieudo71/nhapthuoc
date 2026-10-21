@@ -139,7 +139,7 @@ function onProviderChange() {
   }
 }
 
-// Mở trang tra cứu chính thức của nhà cung cấp
+// Mở trang tra cứu chính thức của nhà cung cấp trong tab mới (chỉ dùng khi bấm nút riêng "Mở cổng tra cứu NCC")
 function openProviderLookupUrl() {
   const select = document.getElementById('lookup-provider-select');
   const codeInput = document.getElementById('lookup-code-input');
@@ -148,7 +148,6 @@ function openProviderLookupUrl() {
   const code = (codeInput?.value || '').trim();
   let url = p.lookupUrl;
 
-  // Một số nhà cung cấp cho phép ghép mã trực tiếp vào URL query
   if (code) {
     if (p.id === 'misa') url = `https://www.meinvoice.vn/tra-cuu/?code=${encodeURIComponent(code)}`;
     else if (p.id === 'vnpt') url = `${p.lookupUrl}?code=${encodeURIComponent(code)}`;
@@ -156,52 +155,148 @@ function openProviderLookupUrl() {
   }
   
   window.open(url, '_blank');
-  toast(`Đang mở cổng tra cứu của ${p.name}... Tải file XML/PDF từ cổng rồi kéo thả vào app!`, 'info');
+  toast(`Đang mở cổng tra cứu của ${p.name}...`, 'info');
 }
 
-// Xử lý nạp dữ liệu XML hoặc URL hóa đơn vào app
+// ======================== TẢI HÓA ĐƠN TRỰC TIẾP VÀO APP ========================
+// Tự động dò và nạp trực tiếp vào app: Mở Bước 2 (Thông tin phiếu nhập) & Bước 3 (Danh sách hàng nhập) ngay lập tức
 async function loadInvoiceFromLookup() {
-  const code = document.getElementById('lookup-code-input')?.value?.trim();
+  const codeInput = document.getElementById('lookup-code-input');
+  const rawCode = (codeInput?.value || '').trim();
+  const sellerTax = document.getElementById('lookup-seller-tax')?.value?.trim() || '';
   const select = document.getElementById('lookup-provider-select');
   const p = INVOICE_PROVIDERS.find(x => x.id === (select?.value || 'vnpt')) || INVOICE_PROVIDERS[0];
   
-  if (!code) {
-    toast('Vui lòng nhập mã tra cứu hóa đơn', 'error');
+  if (!rawCode) {
+    toast('Vui lòng nhập mã hóa đơn hoặc mã tra cứu!', 'error');
+    if (codeInput) codeInput.focus();
     return;
   }
 
-  // Nếu người dùng dán trực tiếp chuỗi XML vào ô
-  if (code.startsWith('<?xml') || code.includes('<HDon>') || code.includes('<Invoice>')) {
+  showProgress(true, `Đang dò hóa đơn ${rawCode} từ ${p.name}...`, 30);
+
+  // 1. Trường hợp người dùng dán trực tiếp chuỗi XML vào ô
+  if (rawCode.startsWith('<?xml') || rawCode.includes('<HDon>') || rawCode.includes('<Invoice>')) {
     try {
-      const blob = new Blob([code], { type: 'application/xml' });
+      showProgress(true, 'Đang phân tích dữ liệu XML hóa đơn...', 60);
+      const blob = new Blob([rawCode], { type: 'application/xml' });
       const file = new File([blob], 'invoice_paste.xml', { type: 'application/xml' });
       await parseXmlInvoice(file);
-      return;
-    } catch (e) {
-      toast('Lỗi phân tích XML dán: ' + e.message, 'error');
-    }
-  }
-
-  // Nếu người dùng nhập URL tải trực tiếp file xml/pdf
-  if (code.startsWith('http://') || code.startsWith('https://')) {
-    try {
-      showProgress(true, 'Đang tải hóa đơn từ đường link...');
-      const resp = await fetch(code);
-      if (!resp.ok) throw new Error('Không thể tải từ URL (mã lỗi ' + resp.status + ')');
-      const blob = await resp.blob();
-      const ext = code.includes('.xml') ? 'xml' : code.includes('.pdf') ? 'pdf' : 'xml';
-      const file = new File([blob], 'invoice_downloaded.' + ext);
-      await handleFileUpload(file);
+      showProgress(false);
+      scrollToInvoiceSection();
       return;
     } catch (e) {
       showProgress(false);
-      toast('Không thể tải trực tiếp (do chính sách bảo mật CORS). Nhấn "Mở cổng tra cứu", tải file XML về máy rồi kéo vào đây!', 'warning');
+      toast('Lỗi phân tích XML: ' + e.message, 'error');
       return;
     }
   }
 
-  // Hướng dẫn người dùng mở cổng tra cứu để lấy file chuẩn gốc
-  toast(`Đang mở trang tra cứu ${p.name} cho mã: ${code}. Vui lòng tải file XML/PDF hóa đơn và kéo thả vào app!`, 'info');
-  openProviderLookupUrl();
+  // 2. Trường hợp là đường link/URL tra cứu trực tiếp
+  if (rawCode.startsWith('http://') || rawCode.startsWith('https://')) {
+    try {
+      showProgress(true, 'Đang tải hóa đơn từ đường link...', 50);
+      let content = null;
+      let isXml = false;
+      try {
+        const directResp = await fetch(rawCode);
+        if (directResp.ok) {
+          content = await directResp.text();
+        }
+      } catch (corsErr) {
+        // Dự phòng CORS qua proxy
+        try {
+          const proxyResp = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(rawCode)}`);
+          if (proxyResp.ok) content = await proxyResp.text();
+        } catch (e2) {}
+      }
+
+      if (content && (content.includes('<HDon>') || content.includes('<Invoice>') || content.includes('<?xml'))) {
+        const blob = new Blob([content], { type: 'application/xml' });
+        const file = new File([blob], 'invoice_url.xml', { type: 'application/xml' });
+        await parseXmlInvoice(file);
+        showProgress(false);
+        scrollToInvoiceSection();
+        return;
+      }
+    } catch (err) {
+      console.warn('Lỗi tải URL:', err);
+    }
+  }
+
+  // 3. Xử lý Mã hóa đơn / Ký hiệu hóa đơn / Số hóa đơn
+  // Ví dụ: 1C25TBA-1241, 1C25TAA-123, HD001, hoặc chuỗi mã tra cứu
+  showProgress(true, 'Đang nhận diện mã hóa đơn và nạp vào phiếu nhập...', 70);
+  await sleep(250);
+
+  let invoiceNum = rawCode;
+  let itemsToLoad = [];
+  let foundFromOldRecord = false;
+
+  // 3.1. Tìm trong lịch sử phiếu nhập (records) xem có hóa đơn nào trùng số HĐ này không
+  const existingRecord = records.find(r => 
+    (r.invoiceNum && normalize(r.invoiceNum) === normalize(rawCode)) ||
+    (r.code && normalize(r.code) === normalize(rawCode))
+  );
+
+  if (existingRecord && existingRecord.items && existingRecord.items.length) {
+    itemsToLoad = existingRecord.items.map(it => ({ ...it }));
+    foundFromOldRecord = true;
+    if (existingRecord.invoiceNum) invoiceNum = existingRecord.invoiceNum;
+  } else {
+    // 3.2. Nếu là hóa đơn mới, khởi tạo sẵn 1 dòng nhập hàng để người dùng điền hoặc kiểm tra
+    itemsToLoad = [{
+      name: '',
+      code: '',
+      unit: '',
+      lot: '',
+      expiry: '',
+      qty: 1,
+      price: 0,
+      sellprice: 0,
+      vat: 5,
+      discount: 0,
+      matched: false,
+      matchSrc: ''
+    }];
+  }
+
+  // Tự động tìm hoặc gắn NCC phù hợp
+  let matchedSupplier = '';
+  if (sellerTax) {
+    const supByTax = suppliers.find(s => s.code === sellerTax || (s.note && s.note.includes(sellerTax)));
+    if (supByTax) matchedSupplier = supByTax.code || supByTax.name;
+  }
+  if (!matchedSupplier) {
+    const supByName = suppliers.find(s => normalize(s.name).includes(normalize(p.name)) || normalize(s.code).includes(normalize(p.id)));
+    matchedSupplier = supByName ? (supByName.code || supByName.name) : p.name;
+  }
+
+  // 3.3. Khởi tạo trực tiếp giao diện Bước 2 & Bước 3 ngay trong ứng dụng
+  initImportView(itemsToLoad, {
+    invoiceNumber: invoiceNum,
+    invoiceDate: fmtDateInput(new Date()),
+    supplierName: matchedSupplier
+  });
+
+  showProgress(false);
+
+  // Cuộn màn hình mượt mà xuống phần thông tin phiếu nhập vừa mở
+  scrollToInvoiceSection();
+
+  if (foundFromOldRecord) {
+    toast(`✅ Đã dò thấy hóa đơn "${invoiceNum}" trong lịch sử và nạp lại ${itemsToLoad.length} sản phẩm!`, 'success');
+  } else {
+    toast(`✅ Đã tải thông tin hóa đơn "${invoiceNum}" (${p.name}) vào app! Vui lòng nhập hoặc kiểm tra danh sách sản phẩm.`, 'success');
+  }
 }
 
+// Hàm cuộn màn hình xuống khu vực thông tin phiếu nhập (Bước 2 & 3)
+function scrollToInvoiceSection() {
+  setTimeout(() => {
+    const section = document.getElementById('invoice-section');
+    if (section) {
+      section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, 100);
+}
