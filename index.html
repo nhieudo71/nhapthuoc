@@ -128,11 +128,11 @@
           </div>
 
           <div class="flex gap-2 mt-2">
-            <button type="button" class="btn btn-outline btn-sm flex-1 justify-center" onclick="openProviderLookupUrl()" title="Mở trang tra cứu của nhà cung cấp để tải file XML/PDF">
-              🌐 Mở cổng tra cứu NCC
+            <button type="button" class="btn btn-outline btn-sm flex-1 justify-center" onclick="openProviderLookupUrl()" title="Mở trang tra cứu của nhà cung cấp để tải file XML">
+              🌐 1. Mở cổng NCC tải XML
             </button>
-            <button type="button" class="btn btn-primary btn-sm flex-1 justify-center" onclick="loadInvoiceFromLookup()">
-              📥 Tải vào app
+            <button type="button" class="btn btn-primary btn-sm flex-1 justify-center" onclick="showPage('lookup')">
+              🔍 2. Tra cứu & Xem trực quan
             </button>
           </div>
         </div>
@@ -254,15 +254,41 @@
       </div>
 
       <div class="info-box mb-4" id="lookup-page-guide">
-        Chọn nhà cung cấp và nhập mã tra cứu in trên hóa đơn để tự động nạp vào app.
+        Chọn nhà cung cấp và nhập mã tra cứu in trên hóa đơn. Bấm nút để mở cổng tải file XML, sau đó nạp vào xem trực quan trước khi nhập hàng.
       </div>
 
       <div class="flex gap-3 flex-wrap">
-        <button type="button" class="btn btn-primary" onclick="executeLookupAndLoad()">
-          📥 Tải vào app để nhập hàng
-        </button>
         <button type="button" class="btn btn-outline" onclick="openCurrentProviderUrl()">
-          🌐 Mở cổng tra cứu chính thức của NCC
+          🌐 Bước 1: Mở cổng NCC tải file XML
+        </button>
+        <button type="button" class="btn btn-primary" onclick="triggerLookupXmlUpload()">
+          📂 Bước 2: Nạp file XML & Xem hóa đơn trực quan
+        </button>
+        <input type="file" id="lookup-xml-input" accept=".xml" style="display:none" onchange="handleLookupXmlFile(this)">
+      </div>
+    </div>
+
+    <!-- KHUNG XEM TRỰC QUAN HÓA ĐƠN ĐIỆN TỬ (TƯƠNG TỰ BẢN THỂ HIỆN PDF) -->
+    <div class="card" id="lookup-preview-card" style="display:none">
+      <div class="flex items-center justify-between mb-3 border-b border-[var(--border)] pb-3 flex-wrap gap-2">
+        <div class="card-title" style="margin:0">📄 BẢN XEM TRỰC QUAN HÓA ĐƠN ĐIỆN TỬ (XML PREVIEW)</div>
+        <div class="flex gap-2">
+          <button type="button" class="btn btn-ghost btn-sm" onclick="closeLookupPreview()">✕ Đóng xem trước</button>
+          <button type="button" class="btn btn-primary btn-sm" onclick="confirmImportFromLookupPreview()">
+            ✅ Xác nhận & Nhập vào phiếu nhập hàng
+          </button>
+        </div>
+      </div>
+
+      <!-- Khung thể hiện hóa đơn trực quan -->
+      <div id="lookup-invoice-sheet" class="bg-[var(--bg2)] border border-[var(--border)] rounded-[var(--radius)] p-4 sm:p-6 shadow-sm">
+        <!-- Render nội dung hóa đơn kiểu PDF ở đây -->
+      </div>
+
+      <div class="mt-4 flex justify-end gap-3">
+        <button type="button" class="btn btn-outline" onclick="closeLookupPreview()">Hủy bỏ</button>
+        <button type="button" class="btn btn-primary" onclick="confirmImportFromLookupPreview()">
+          📥 Bấm để nhập hóa đơn này vào phiếu nhập kho ➔
         </button>
       </div>
     </div>

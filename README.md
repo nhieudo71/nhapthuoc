@@ -11,11 +11,13 @@
    - **Ảnh & PDF (Gemini AI + OCR Tesseract.js):** Nhận diện hóa đơn quét/chụp bằng AI hoặc OCR cục bộ chạy ngay trong trình duyệt mà không cần mạng.
    - **XML Hóa Đơn Điện Tử (Thông tư 78):** Đọc trực tiếp file XML gốc của VNPT, Viettel, MISA, BKAV, CyberBill, EasyInvoice, Thái Sơn... Tự động bóc tách chuẩn xác 100% Số lô (Batch/Lot) và Hạn dùng (Expiry) qua 4 tầng: thẻ XML trực tiếp, thẻ mở rộng `TTKhac`, thẻ ghi chú `GChu` và bóc tách từ tên sản phẩm.
 
-2. **Module riêng Tra cứu & Tải mã hóa đơn:**
+2. **Module Tra cứu hóa đơn & Xem trực quan file XML (như bản thể hiện PDF):**
    - Được thiết kế thành tab riêng biệt trên thanh điều hướng (**🔍 Tra cứu mã hóa đơn**).
    - Hỗ trợ 14 nhà cung cấp HĐĐT lớn nhất Việt Nam: **Tổng Cục Thuế, VNPT-Invoice, Viettel S-Invoice, MISA meInvoice, BKAV eHoadon, EasyInvoice, Thái Sơn, CyberBill, Mắt Bão, FPT, M-Invoice, MobiFone, VNPAY, Vi-Invoice**.
-   - Bấm chọn 1-click nhanh nhà cung cấp, hiển thị hướng dẫn tra cứu cho từng loại hóa đơn.
-   - Bấm **📥 Tải vào app để nhập hàng**, hệ thống tự động dò, chuyển sang phiếu nhập và mở ngay bảng thông tin phiếu nhập cùng danh sách mặt hàng trong ứng dụng.
+   - **Quy trình 2 bước chuẩn hóa:**
+     - *Bước 1:* Bấm **🌐 Mở cổng NCC tải file XML** (tự động ghép mã tra cứu của bên bán để tải tệp XML hóa đơn điện tử gốc).
+     - *Bước 2:* Bấm **📂 Nạp file XML & Xem hóa đơn trực quan**. Hệ thống lập tức hiển thị **Bản xem trực quan đầy đủ thông tin hóa đơn** tương tự như xem file PDF (Tiêu đề, Ký hiệu, Số HĐ, Ngày lập, Bên bán, Bên mua, Bảng thuốc chi tiết kèm Số lô, Hạn dùng, ĐVT, Số lượng, Đơn giá, Thành tiền).
+     - Sau khi kiểm tra trực quan, bấm **✅ Xác nhận & Nhập vào phiếu nhập hàng** để tự động nạp toàn bộ vào hệ thống.
    - Tự động lưu lịch sử các mã đã tra cứu gần đây để bấm nạp lại nhanh chóng mà không cần gõ lại.
 
 3. **Tab Bảng giá thuốc & Nút "🎯 Tự nhập giá thuốc":**

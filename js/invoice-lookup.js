@@ -268,6 +268,171 @@ function useHistoryItem(code, providerId, sellerTax = '') {
   executeLookupAndLoad();
 }
 
+// ======================== XEM TRỰC QUAN HÓA ĐƠN ĐIỆN TỬ (XML PREVIEW NHƯ BẢN THỂ HIỆN PDF) ========================
+let currentLookupParsedInvoice = null;
+
+function triggerLookupXmlUpload() {
+  const input = document.getElementById('lookup-xml-input');
+  if (input) input.click();
+}
+
+async function handleLookupXmlFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  try {
+    showProgress(true, 'Đang giải mã file XML hóa đơn...', 40);
+    const text = await file.text();
+    const parsed = parseXmlDataToStructuredInvoice(text);
+    currentLookupParsedInvoice = parsed;
+
+    // Lưu vào lịch sử tra cứu
+    if (parsed.invoiceNumber) {
+      const codeInput = document.getElementById('lookup-page-code');
+      if (codeInput) codeInput.value = parsed.invoiceNumber;
+      saveToLookupHistory(parsed.invoiceNumber, document.getElementById('lookup-page-provider')?.value || 'vnpt', parsed.seller.tax);
+      renderLookupHistory();
+    }
+
+    // Hiển thị bản xem trực quan như PDF
+    renderVisualInvoicePreview(parsed);
+    showProgress(false);
+    toast(`Đã tải thành công hóa đơn ${parsed.invoiceNumber || ''}! Bạn có thể xem trực quan trước khi nhập.`, 'success');
+  } catch (e) {
+    showProgress(false);
+    toast('Lỗi phân tích XML: ' + e.message, 'error');
+  } finally {
+    input.value = '';
+  }
+}
+
+function renderVisualInvoicePreview(data) {
+  const previewCard = document.getElementById('lookup-preview-card');
+  const sheet = document.getElementById('lookup-invoice-sheet');
+  if (!previewCard || !sheet) return;
+
+  const totalQty = data.items.reduce((s, it) => s + (it.qty || 0), 0);
+  const totalAmount = data.totals.withVat || data.items.reduce((s, it) => s + (it.amount || it.qty * it.price), 0);
+
+  sheet.innerHTML = `
+    <!-- HEADER HÓA ĐƠN -->
+    <div style="border-bottom:2px solid var(--accent2);padding-bottom:14px;margin-bottom:16px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px">
+        <div>
+          <div style="font-size:22px;font-weight:800;color:var(--accent2);text-transform:uppercase;letter-spacing:0.5px">
+            HÓA ĐƠN GIÁ TRỊ GIA TĂNG
+          </div>
+          <div style="font-size:13px;color:var(--text3);margin-top:2px">
+            (Bản thể hiện của hóa đơn điện tử — Khởi tạo từ tệp dữ liệu XML gốc)
+          </div>
+        </div>
+        <div style="text-align:right;background:var(--bg3);padding:8px 14px;border-radius:var(--radius);border:1px solid var(--border)">
+          <div style="font-size:13.5px;font-weight:700">Ký hiệu: <span class="font-mono text-[var(--accent2)]">${esc(data.khhd || '—')}</span></div>
+          <div style="font-size:15px;font-weight:800">Số HĐ: <span class="font-mono text-[var(--accent2)]">${esc(data.shd || data.invoiceNumber || '—')}</span></div>
+          <div style="font-size:12.5px;color:var(--text3)">Ngày: <strong>${esc(data.invoiceDate || '—')}</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- THÔNG TIN BÊN BÁN & BÊN MUA -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:16px;margin-bottom:18px;background:var(--bg3);padding:14px;border-radius:var(--radius);border:1px solid var(--border)">
+      <div>
+        <div style="font-size:12.5px;font-weight:800;text-transform:uppercase;color:var(--text3);margin-bottom:6px">🏢 ĐƠN VỊ BÁN HÀNG (NHÀ CUNG CẤP):</div>
+        <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px">${esc(data.seller.name || 'Chưa xác định')}</div>
+        <div style="font-size:13.5px;color:var(--text2)">Mã số thuế: <strong class="font-mono text-[var(--text)]">${esc(data.seller.tax || '—')}</strong></div>
+        ${data.seller.addr ? `<div style="font-size:13px;color:var(--text3);margin-top:2px">Địa chỉ: ${esc(data.seller.addr)}</div>` : ''}
+        ${data.seller.phone ? `<div style="font-size:13px;color:var(--text3)">Điện thoại: ${esc(data.seller.phone)}</div>` : ''}
+      </div>
+
+      <div>
+        <div style="font-size:12.5px;font-weight:800;text-transform:uppercase;color:var(--text3);margin-bottom:6px">🏥 ĐƠN VỊ MUA HÀNG (QUẦY THUỐC):</div>
+        <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px">${esc(data.buyer.name || settings.name || 'Quầy thuốc')}</div>
+        ${data.buyer.tax ? `<div style="font-size:13.5px;color:var(--text2)">Mã số thuế: <strong class="font-mono text-[var(--text)]">${esc(data.buyer.tax)}</strong></div>` : ''}
+        ${data.buyer.addr ? `<div style="font-size:13px;color:var(--text3);margin-top:2px">Địa chỉ: ${esc(data.buyer.addr)}</div>` : ''}
+      </div>
+    </div>
+
+    <!-- BẢNG CHI TIẾT THUỐC & HÀNG HÓA -->
+    <div style="margin-bottom:14px">
+      <div style="font-size:14px;font-weight:800;margin-bottom:8px;color:var(--text2)">
+        📦 DANH SÁCH CHI TIẾT THUỐC / SẢN PHẨM TRÊN HÓA ĐƠN (${data.items.length} mặt hàng):
+      </div>
+      <div class="table-wrap" style="max-height:420px;overflow-y:auto">
+        <table>
+          <thead>
+            <tr>
+              <th class="row-num">#</th>
+              <th>Tên thuốc / Hoạt chất</th>
+              <th style="min-width:85px">Số Lô</th>
+              <th style="min-width:90px">Hạn Dùng</th>
+              <th style="min-width:65px">ĐVT</th>
+              <th style="text-align:right">Số lượng</th>
+              <th style="text-align:right">Đơn giá</th>
+              <th style="text-align:right">VAT%</th>
+              <th style="text-align:right">Thành tiền</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${data.items.map((it, idx) => `
+              <tr>
+                <td class="row-num">${idx + 1}</td>
+                <td>
+                  <strong>${esc(it.name)}</strong>
+                  ${it.matched ? `<span class="chip chip-success" style="font-size:11px;margin-left:4px">Đã khớp mã quầy</span>` : ''}
+                </td>
+                <td><span class="chip ${it.lot ? 'chip-warning' : ''}" style="font-family:monospace">${esc(it.lot || '—')}</span></td>
+                <td><span class="chip ${it.expiry ? 'chip-info' : ''}" style="font-family:monospace">${esc(it.expiry || '—')}</span></td>
+                <td style="font-size:13.5px">${esc(it.unit || '—')}</td>
+                <td style="text-align:right;font-weight:700;font-family:monospace">${fmtNum(it.qty)}</td>
+                <td style="text-align:right;font-family:monospace">${fmtNum(it.price)}</td>
+                <td style="text-align:right">${it.vat}%</td>
+                <td style="text-align:right;font-weight:700;color:var(--accent2);font-family:monospace">${fmtNum(it.amount || it.qty * it.price)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+          <tfoot>
+            <tr style="background:var(--bg3);font-weight:800">
+              <td colspan="5" style="text-align:right;text-transform:uppercase">Tổng cộng tiền hàng (${fmtNum(totalQty)} sản phẩm):</td>
+              <td style="text-align:right;font-family:monospace">${fmtNum(totalQty)}</td>
+              <td colspan="2" style="text-align:right">Tổng thanh toán:</td>
+              <td style="text-align:right;color:var(--accent2);font-size:16px;font-family:monospace">${fmtNum(totalAmount)} đ</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+  `;
+
+  previewCard.style.display = 'block';
+  previewCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function closeLookupPreview() {
+  const previewCard = document.getElementById('lookup-preview-card');
+  if (previewCard) previewCard.style.display = 'none';
+  currentLookupParsedInvoice = null;
+}
+
+function confirmImportFromLookupPreview() {
+  if (!currentLookupParsedInvoice) {
+    toast('Chưa có dữ liệu hóa đơn để nhập!', 'error');
+    return;
+  }
+
+  const p = currentLookupParsedInvoice;
+  showPage('import');
+  initImportView(p.items, {
+    invoiceNumber: p.invoiceNumber,
+    invoiceDate: p.invoiceDate,
+    supplierName: p.seller.name,
+    supplierTax: p.seller.tax
+  });
+
+  closeLookupPreview();
+  scrollToInvoiceSection();
+  toast(`✅ Đã nạp thành công hóa đơn "${p.invoiceNumber}" vào phiếu nhập kho!`, 'success');
+}
+
 // ======================== THỰC THI TRA CỨU VÀ TẢI VÀO APP ========================
 async function executeLookupAndLoad() {
   const codeInput = document.getElementById('lookup-page-code');
@@ -291,13 +456,12 @@ async function executeLookupAndLoad() {
   // 1. Nếu dán trực tiếp XML
   if (rawCode.startsWith('<?xml') || rawCode.includes('<HDon>') || rawCode.includes('<Invoice>')) {
     try {
-      showProgress(true, 'Đang đọc dữ liệu XML hóa đơn...', 70);
-      const blob = new Blob([rawCode], { type: 'application/xml' });
-      const file = new File([blob], 'invoice_paste.xml', { type: 'application/xml' });
-      await parseXmlInvoice(file);
+      showProgress(true, 'Đang phân tích dữ liệu XML hóa đơn...', 70);
+      const parsed = parseXmlDataToStructuredInvoice(rawCode);
+      currentLookupParsedInvoice = parsed;
+      renderVisualInvoicePreview(parsed);
       showProgress(false);
-      showPage('import');
-      scrollToInvoiceSection();
+      toast(`✅ Đã giải mã XML thành công! Mời bạn kiểm tra bản xem trước trực quan.`, 'success');
       return;
     } catch (e) {
       showProgress(false);
@@ -322,12 +486,11 @@ async function executeLookupAndLoad() {
       }
 
       if (content && (content.includes('<HDon>') || content.includes('<Invoice>') || content.includes('<?xml'))) {
-        const blob = new Blob([content], { type: 'application/xml' });
-        const file = new File([blob], 'invoice_url.xml', { type: 'application/xml' });
-        await parseXmlInvoice(file);
+        const parsed = parseXmlDataToStructuredInvoice(content);
+        currentLookupParsedInvoice = parsed;
+        renderVisualInvoicePreview(parsed);
         showProgress(false);
-        showPage('import');
-        scrollToInvoiceSection();
+        toast(`✅ Đã tải file XML từ URL thành công! Mời bạn xem trực quan trước khi nhập hàng.`, 'success');
         return;
       }
     } catch (err) {
@@ -416,7 +579,7 @@ function openCurrentProviderUrl() {
   }
   
   window.open(url, '_blank');
-  toast(`Đang mở cổng tra cứu của ${p.name}...`, 'info');
+  toast(`Đang mở cổng tra cứu ${p.name}. Hãy tải file XML về máy rồi nạp vào bước 2 nhé!`, 'info');
 }
 
 // Tương thích ngược với nút gọi từ trang import

@@ -483,21 +483,19 @@ function cleanExpiryFormat(s) {
   return str;
 }
 
-async function parseXmlInvoice(file) {
-  setProgress(30, 'Đọc cấu trúc XML hóa đơn điện tử...');
-  const text = await file.text();
+// Hàm phân tích dữ liệu XML trả về Object có cấu trúc (dùng chung cho cả Import trực tiếp và Xem trực quan PDF)
+function parseXmlDataToStructuredInvoice(text) {
   const parser = new DOMParser();
   const doc = parser.parseFromString(text, 'application/xml');
 
   if (doc.querySelector('parsererror')) {
-    throw new Error('File XML không hợp lệ');
+    throw new Error('File XML không hợp lệ hoặc bị lỗi cú pháp');
   }
-
-  setProgress(50, 'Trích xuất dữ liệu hóa đơn...');
 
   // 1. Trích xuất thông tin hóa đơn
   const shd = doc.querySelector('SHDon')?.textContent?.trim() || doc.querySelector('InvoiceNumber')?.textContent?.trim() || '';
   const khhd = doc.querySelector('KHHDon')?.textContent?.trim() || doc.querySelector('InvoiceSeries')?.textContent?.trim() || '';
+  const khmshd = doc.querySelector('KHMSHDon')?.textContent?.trim() || doc.querySelector('InvoiceType')?.textContent?.trim() || '';
   const nlap = doc.querySelector('NLap')?.textContent?.trim() || doc.querySelector('InvoiceDate')?.textContent?.trim() || '';
   
   let invoiceNumber = shd;
@@ -509,13 +507,25 @@ async function parseXmlInvoice(file) {
     else invoiceDate = nlap;
   }
 
-  // Thông tin NCC
+  // Thông tin Người Bán (Nhà cung cấp)
   const sellerName = doc.querySelector('NBan Ten')?.textContent?.trim() || doc.querySelector('Seller LegalName')?.textContent?.trim() || '';
   const sellerTax = doc.querySelector('NBan MST')?.textContent?.trim() || doc.querySelector('Seller TaxCode')?.textContent?.trim() || '';
+  const sellerAddr = doc.querySelector('NBan DChi')?.textContent?.trim() || doc.querySelector('Seller Address')?.textContent?.trim() || '';
+  const sellerPhone = doc.querySelector('NBan SDThoai')?.textContent?.trim() || doc.querySelector('Seller PhoneNumber')?.textContent?.trim() || '';
+  const sellerBank = doc.querySelector('NBan STKNHang')?.textContent?.trim() || doc.querySelector('Seller AccountNumber')?.textContent?.trim() || '';
+
+  // Thông tin Người Mua
+  const buyerName = doc.querySelector('NMua Ten')?.textContent?.trim() || doc.querySelector('Buyer LegalName')?.textContent?.trim() || '';
+  const buyerTax = doc.querySelector('NMua MST')?.textContent?.trim() || doc.querySelector('Buyer TaxCode')?.textContent?.trim() || '';
+  const buyerAddr = doc.querySelector('NMua DChi')?.textContent?.trim() || doc.querySelector('Buyer Address')?.textContent?.trim() || '';
+
+  // Tổng tiền
+  const totalAmountWithoutVat = parseFloat(doc.querySelector('TgTTXBThue, TotalAmountWithoutVAT')?.textContent?.trim()) || 0;
+  const totalVat = parseFloat(doc.querySelector('TgTThue, TotalVATAmount')?.textContent?.trim()) || 0;
+  const totalAmountWithVat = parseFloat(doc.querySelector('TgTTTBSo, TotalAmountWithVAT, TotalPaymentAmount')?.textContent?.trim()) || 0;
 
   // 2. Trích xuất danh sách mặt hàng
   const items = [];
-  // Tìm các node hàng hóa (chuẩn TT78 thường là HHDVu hoặc Item)
   const itemNodes = doc.querySelectorAll('HHDVu, Item');
   
   itemNodes.forEach(node => {
@@ -526,17 +536,17 @@ async function parseXmlInvoice(file) {
     const qty = parseFloat(node.querySelector('SLuong, Quantity')?.textContent?.trim()) || 0;
     const price = parseFloat(node.querySelector('DGia, UnitPrice')?.textContent?.trim()) || 0;
     const disc = parseFloat(node.querySelector('TLCKhau, DiscountRate')?.textContent?.trim()) || 0;
+    const amount = parseFloat(node.querySelector('ThTien, Amount')?.textContent?.trim()) || (qty * price);
     
     // Thuế suất VAT
     let vatStr = node.querySelector('TSuat, VATRate')?.textContent?.trim() || '5';
     let vat = parseFloat(vatStr.replace('%', '')) || 0;
 
     // ================== BÓC TÁCH SỐ LÔ & HẠN DÙNG TOÀN DIỆN ==================
-    // Bước A: Tìm trong các thẻ XML trực tiếp của dòng hàng
     let lot = node.querySelector('SoLo, Solo, SOLO, LoSX, Losx, LOSX, Lo, LO, BatchNumber, LotNumber, LotNo, Lot, SoLoSX, BatchNo, MaLo, Batch, SerialNumber, SerialNo')?.textContent?.trim() || '';
     let expiry = node.querySelector('HanDung, Handung, HANDUNG, HSD, Hsd, ExpiryDate, ExpDate, ExpireDate, HanSD, NgayHH, NgayHetHan, HanSuDung, Expire, ExpirationDate, DateExpired, DueDate')?.textContent?.trim() || '';
 
-    // Bước B: Tìm trong các thẻ mở rộng TTKhac / TTin / CustomField của ngành dược
+    // Thẻ mở rộng TTKhac / TTin / CustomField của ngành dược
     if (!lot || !expiry) {
       const extraNodes = node.querySelectorAll('TTin, Field, CustomField, Attribute, Property');
       extraNodes.forEach(extra => {
@@ -553,7 +563,7 @@ async function parseXmlInvoice(file) {
       });
     }
 
-    // Bước C: Tìm trong thẻ ghi chú dòng hàng (GChu, Note, Remark, GhiChu)
+    // Thẻ ghi chú dòng hàng (GChu, Note, Remark, GhiChu)
     const noteText = node.querySelector('GChu, Note, GhiChu, Remark, Description')?.textContent?.trim() || '';
     if ((!lot || !expiry) && noteText) {
       const extractedFromNote = extractLotAndExpiryFromText(noteText);
@@ -561,17 +571,16 @@ async function parseXmlInvoice(file) {
       if (!expiry && extractedFromNote.expiry) expiry = extractedFromNote.expiry;
     }
 
-    // Bước D: Tìm trong chính tên hàng hóa (ví dụ: "Panadol Extra (Lô: 240112 - HSD: 12/2026)")
+    // Tên hàng hóa
     if (!lot || !expiry) {
       const extractedFromName = extractLotAndExpiryFromText(name);
       if (!lot && extractedFromName.lot) lot = extractedFromName.lot;
       if (!expiry && extractedFromName.expiry) expiry = extractedFromName.expiry;
     }
 
-    // Chuẩn hóa định dạng ngày hạn dùng về dd/mm/yyyy
     expiry = cleanExpiryFormat(expiry);
-
     const matched = findDrug(name);
+
     items.push({
       name,
       lot,
@@ -579,6 +588,7 @@ async function parseXmlInvoice(file) {
       unit: matched?.unit || unit,
       qty,
       price,
+      amount,
       sellprice: matched?.price || 0,
       vat: matched?.vat || vat,
       discount: disc,
@@ -587,11 +597,50 @@ async function parseXmlInvoice(file) {
     });
   });
 
+  return {
+    rawXml: text,
+    invoiceNumber,
+    shd,
+    khhd,
+    khmshd,
+    invoiceDate,
+    seller: {
+      name: sellerName,
+      tax: sellerTax,
+      addr: sellerAddr,
+      phone: sellerPhone,
+      bank: sellerBank
+    },
+    buyer: {
+      name: buyerName,
+      tax: buyerTax,
+      addr: buyerAddr
+    },
+    totals: {
+      withoutVat: totalAmountWithoutVat,
+      vat: totalVat,
+      withVat: totalAmountWithVat || (totalAmountWithoutVat + totalVat)
+    },
+    items
+  };
+}
+
+async function parseXmlInvoice(file) {
+  setProgress(30, 'Đọc cấu trúc XML hóa đơn điện tử...');
+  const text = await file.text();
+  const parsed = parseXmlDataToStructuredInvoice(text);
+
+  setProgress(80, 'Khởi tạo giao diện phiếu nhập...');
   setProgress(100, 'Xong!');
   setTimeout(() => {
     showProgress(false);
-    initImportView(items, { invoiceNumber, invoiceDate, supplierName: sellerName, supplierTax: sellerTax });
-    toast(`Đã đọc ${items.length} thuốc từ file XML (đầy đủ Số lô & Hạn dùng)!`, 'success');
+    initImportView(parsed.items, { 
+      invoiceNumber: parsed.invoiceNumber, 
+      invoiceDate: parsed.invoiceDate, 
+      supplierName: parsed.seller.name, 
+      supplierTax: parsed.seller.tax 
+    });
+    toast(`Đã đọc ${parsed.items.length} thuốc từ file XML (đầy đủ Số lô & Hạn dùng)!`, 'success');
   }, 300);
 }
 

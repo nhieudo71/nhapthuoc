@@ -12,7 +12,7 @@
 - [x] **Xử lý PDF & Ảnh bằng Gemini AI:** Gửi ảnh/PDF đến Gemini API (`gemini-2.5-flash`, `gemini-1.5-flash`) kèm ngữ cảnh 50 thuốc trong danh mục quầy để trích xuất JSON cấu trúc chuẩn.
 - [x] **Trích xuất thông tin hóa đơn:** Tự động tách Ký hiệu hóa đơn, Số hóa đơn (ghép dạng `KyHieu-So`), Ngày hóa đơn, Tên người bán/MST.
 - [x] **Cơ chế Fallback Offline (Tesseract.js & PDF.js):** Khi không có API Key hoặc AI quá tải (HTTP 503), hệ thống tự động kích hoạt Tesseract OCR WebAssembly chạy cục bộ ngay trong trình duyệt mà không cần mạng.
-- [x] **Hỗ trợ XML Hóa Đơn Điện Tử Thông Tư 78:** Đọc trực tiếp file XML hóa đơn gốc của các nhà mạng (VNPT, Viettel, MISA, BKAV...). Tự động bóc tách đầy đủ Số Lô (Lot/Batch) và Hạn dùng (Expiry) qua 4 tầng: thẻ XML trực tiếp (`SoLo`, `HanDung`), thẻ mở rộng (`TTKhac`/`TTin`), thẻ ghi chú (`GChu`/`Note`), và chuỗi tên hàng hóa.
+- [x] **Hỗ trợ XML Hóa Đơn Điện Tử Thông Tư 78 & Bản Thể Hiện Trực Quan (PDF Preview):** Đọc trực tiếp file XML hóa đơn gốc của các nhà mạng (VNPT, Viettel, MISA, BKAV...). Tự động bóc tách đầy đủ Số Lô (Lot/Batch) và Hạn dùng (Expiry) qua 4 tầng: thẻ XML trực tiếp (`SoLo`, `HanDung`), thẻ mở rộng (`TTKhac`/`TTin`), thẻ ghi chú (`GChu`/`Note`), và chuỗi tên hàng hóa. Cung cấp trình render bản thể hiện trực quan hóa đơn điện tử tương tự file PDF ngay trong module tra cứu trước khi xác nhận nhập kho.
 
 ### 1.2. Module Dò Mã Thuốc Thông Minh (`js/matching.js`)
 - [x] **Thuật toán Fuzzy Core-name Matching:** Chuẩn hóa tiếng Việt không dấu, loại bỏ hàm lượng (mg, ml, iu...) và quy cách dạng bào chế (viên, vỉ, lọ, chai...).
