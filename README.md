@@ -30,8 +30,11 @@
 5. **Xuất file Excel chuẩn VNPT Pharmacy (.xls):**
    - Đúng cấu trúc 2 sheet dữ liệu (`Thông tin phiếu nhập`, `Danh sách hàng nhập`) và sheet `Hướng dẫn` tương thích 100% khi import vào phần mềm VNPT.
 
-6. **Bảo mật & Cục bộ:**
-   - Dữ liệu lưu an toàn trên máy người dùng (LocalStorage), hỗ trợ Sao lưu & Phục hồi JSON nhanh chóng.
+6. **Lưu trữ cục bộ IndexedDB siêu lớn (tối đa 5GB+):**
+   - Nâng cấp từ LocalStorage (chỉ 5MB) lên **IndexedDB chuẩn W3C** với chế độ *Persistent Storage* hỗ trợ lưu trữ cục bộ lên tới **5GB+**.
+   - Tự động di chuyển (migrate) dữ liệu cũ từ LocalStorage sang IndexedDB an toàn tuyệt đối.
+   - Cho phép nhập danh mục Dược Quốc Gia đầy đủ hàng chục ngàn thuốc, hàng trăm ngàn dòng hóa đơn qua nhiều năm mà không bao giờ lo đầy bộ nhớ.
+   - Dữ liệu hoàn toàn riêng tư, nằm trên máy tính người dùng và hỗ trợ Sao lưu / Phục hồi file JSON định kỳ.
 
 ---
 

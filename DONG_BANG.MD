@@ -44,18 +44,18 @@
 
 ---
 
-## 2. HỢP ĐỒNG DỮ LIỆU BẮT BUỘC (DATA CONTRACT - KHÔNG ĐƯỢC PHÁ VỠ)
+## 2. HỢP ĐỒNG DỮ LIỆU & CƠ CHẾ LƯU TRỮ INDEXEDDB (TỐI ĐA 5GB)
 
-Tất cả các module tương tác với `localStorage` qua các khóa có tiền tố `pi_`:
-1. `pi_records`: Mảng các đối tượng phiếu nhập đã lưu.
-2. `pi_catalog`: Mảng danh mục thuốc quầy (`code`, `name`, `unit`, `price`, `vat`, `note`).
-3. `pi_national`: Mảng dược quốc gia (`code`, `name`, `active`, `form`).
-4. `pi_suppliers`: Mảng nhà cung cấp (`code`, `name`, `phone`, `addr`, `note`).
-5. `pi_settings`: Thông tin quầy (`name`, `shopcode`, `keeper`, `supplier`).
-6. `pi_apikey`: Khóa Google Gemini API Key.
-7. `pi_theme`: Giao diện sáng/tối (`'dark'` | `'light'`).
-8. `pi_pricelist`: Bảng giá thuốc mới (`stt`, `name`, `unit`, `importPrice`, `price`, `note`, `updatedAt`).
-9. `pi_lookup_history`: Lịch sử các mã hóa đơn đã tra cứu gần đây (`code`, `providerId`, `sellerTax`, `time`).
+Hệ thống sử dụng cơ sở dữ liệu **IndexedDB** (`PharmImport_IndexedDB`) kết hợp Cache RAM tức thì và LocalStorage dự phòng, hỗ trợ lưu trữ dung lượng lên tới **5GB+**:
+1. `records`: Mảng các đối tượng phiếu nhập đã lưu.
+2. `catalog`: Mảng danh mục thuốc quầy (`code`, `name`, `unit`, `price`, `vat`, `note`).
+3. `national`: Mảng dược quốc gia (`code`, `name`, `active`, `form`) - lưu trữ trọn vẹn không giới hạn.
+4. `suppliers`: Mảng nhà cung cấp (`code`, `name`, `phone`, `addr`, `note`).
+5. `settings`: Thông tin quầy (`name`, `shopcode`, `keeper`, `supplier`).
+6. `apikey`: Khóa Google Gemini API Key.
+7. `theme`: Giao diện sáng/tối (`'dark'` | `'light'`).
+8. `pricelist`: Bảng giá thuốc mới (`stt`, `name`, `unit`, `importPrice`, `price`, `note`, `updatedAt`).
+9. `lookup_history`: Lịch sử các mã hóa đơn đã tra cứu gần đây (`code`, `providerId`, `sellerTax`, `time`).
 
 > ⚠️ **QUY TẮC BẢO VỆ:**  
 > - Bất kỳ trường dữ liệu nào mới được thêm vào phải có giá trị mặc định, không được làm crash các hàm đọc dữ liệu cũ.  

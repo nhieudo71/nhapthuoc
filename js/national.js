@@ -144,20 +144,9 @@ async function importNational(input) {
 
   national = parsed;
   natPage = 0;
-  try {
-    DB.set('national', national);
-  } catch (e) {
-    const slim = parsed.map(d => ({ code: d.code, name: d.name }));
-    try {
-      DB.set('national', slim);
-      national = slim;
-      toast('Danh mục lớn — đã lưu rút gọn (bỏ hoạt chất/dạng bào chế)', 'info');
-    } catch (e2) {
-      toast('Bộ nhớ đầy! Danh mục chỉ dùng trong phiên này.', 'error');
-    }
-  }
+  DB.set('national', national);
   renderNational();
-  toast(`Import xong! ${national.length.toLocaleString('vi-VN')} thuốc quốc gia`, 'success');
+  toast(`Import xong! Đã lưu trọn vẹn ${national.length.toLocaleString('vi-VN')} thuốc quốc gia vào IndexedDB!`, 'success');
   input.value = '';
 }
 

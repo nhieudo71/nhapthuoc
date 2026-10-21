@@ -38,9 +38,12 @@ function showPage(p) {
 }
 
 // Khởi chạy khi DOM sẵn sàng
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   // Apply saved theme
   applyTheme(currentTheme);
+
+  // Khởi tạo và nạp dữ liệu từ IndexedDB (dung lượng lưu trữ lên đến 5GB)
+  await DB.initAndMigrate();
 
   // Initialize Drag & Drop for file upload
   const dropZone = document.getElementById('drop-zone');

@@ -51,33 +51,53 @@ function restoreData(input) {
   input.value = '';
 }
 
-function clearAllData() {
+async function clearAllData() {
   if (!prompt('Nhập "XOA" để xác nhận xóa toàn bộ dữ liệu:')?.includes('XOA')) return;
   catalog = [];
   national = [];
   suppliers = [];
   records = [];
   priceList = [];
-  ['catalog', 'national', 'suppliers', 'records', 'pricelist'].forEach(k => DB.set(k, []));
+  ['catalog', 'national', 'suppliers', 'records', 'pricelist', 'lookup_history'].forEach(k => {
+    localStorage.removeItem('pi_' + k);
+  });
+  if (typeof idbClearStore === 'function') {
+    await idbClearStore();
+  }
   updateRecordCount();
   renderStorageInfo();
-  toast('Đã xóa toàn bộ dữ liệu', 'info');
+  toast('Đã xóa toàn bộ dữ liệu trên IndexedDB và LocalStorage!', 'info');
 }
 
-function renderStorageInfo() {
+async function renderStorageInfo() {
   let size = 0;
   for (let k in localStorage) {
     if (k.startsWith('pi_')) size += localStorage[k].length;
   }
+  
+  let usedText = `${(size / 1024).toFixed(1)} KB (LocalStorage)`;
+  let quotaText = 'IndexedDB (Tối đa 5GB+)';
+
+  if (navigator.storage && navigator.storage.estimate) {
+    try {
+      const estimate = await navigator.storage.estimate();
+      const usedMB = (estimate.usage / (1024 * 1024)).toFixed(2);
+      const quotaGB = (estimate.quota / (1024 * 1024 * 1024)).toFixed(1);
+      usedText = `${usedMB} MB`;
+      quotaText = `${quotaGB} GB khả dụng (IndexedDB)`;
+    } catch (e) {}
+  }
+
   const el = document.getElementById('storage-info');
   if (!el) return;
-  el.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px">
+  el.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px">
     <div><div class="info-label">Phiếu nhập</div><div class="info-value">${records.length}</div></div>
     <div><div class="info-label">Bảng giá thuốc</div><div class="info-value">${priceList.length}</div></div>
     <div><div class="info-label">Danh mục quầy</div><div class="info-value">${catalog.length}</div></div>
-    <div><div class="info-label">Dược quốc gia</div><div class="info-value">${national.length}</div></div>
+    <div><div class="info-label">Dược quốc gia</div><div class="info-value">${national.length.toLocaleString('vi-VN')}</div></div>
     <div><div class="info-label">Nhà cung cấp</div><div class="info-value">${suppliers.length}</div></div>
-    <div><div class="info-label">Dung lượng</div><div class="info-value">${(size / 1024).toFixed(1)} KB</div></div>
+    <div><div class="info-label">Đã sử dụng</div><div class="info-value text-mono" style="color:var(--accent2)">${usedText}</div></div>
+    <div><div class="info-label">Dung lượng tối đa</div><div class="info-value text-mono" style="color:var(--blue2)">${quotaText}</div></div>
   </div>`;
 }
 
