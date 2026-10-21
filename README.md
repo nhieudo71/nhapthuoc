@@ -11,9 +11,12 @@
    - **Ảnh & PDF (Gemini AI + OCR Tesseract.js):** Nhận diện hóa đơn quét/chụp bằng AI hoặc OCR cục bộ chạy ngay trong trình duyệt mà không cần mạng.
    - **XML Hóa Đơn Điện Tử (Thông tư 78):** Đọc trực tiếp file XML gốc của VNPT, Viettel, MISA, BKAV... với độ chính xác 100%.
 
-2. **Tra cứu & Tải hóa đơn từ Nhà Cung Cấp:**
+2. **Module riêng Tra cứu & Tải mã hóa đơn:**
+   - Được thiết kế thành tab riêng biệt trên thanh điều hướng (**🔍 Tra cứu mã hóa đơn**).
    - Hỗ trợ 14 nhà cung cấp HĐĐT lớn nhất Việt Nam: **Tổng Cục Thuế, VNPT-Invoice, Viettel S-Invoice, MISA meInvoice, BKAV eHoadon, EasyInvoice, Thái Sơn, CyberBill, Mắt Bão, FPT, M-Invoice, MobiFone, VNPAY, Vi-Invoice**.
-   - Chỉ cần nhập mã hóa đơn và bấm **📥 Tải vào app**, hệ thống tự động dò và mở ngay bảng thông tin phiếu nhập cùng danh sách mặt hàng trong ứng dụng.
+   - Bấm chọn 1-click nhanh nhà cung cấp, hiển thị hướng dẫn tra cứu cho từng loại hóa đơn.
+   - Bấm **📥 Tải vào app để nhập hàng**, hệ thống tự động dò, chuyển sang phiếu nhập và mở ngay bảng thông tin phiếu nhập cùng danh sách mặt hàng trong ứng dụng.
+   - Tự động lưu lịch sử các mã đã tra cứu gần đây để bấm nạp lại nhanh chóng mà không cần gõ lại.
 
 3. **Tab Bảng giá thuốc & Nút "🎯 Tự nhập giá thuốc":**
    - Quản lý bảng giá niêm yết theo định dạng: `STT`, `Tên thuốc`, `Đơn vị tính`, `Giá nhập` (không bắt buộc), `Giá bán`.

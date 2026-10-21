@@ -39,6 +39,7 @@
     <div class="nav-section">
       <span class="nav-label">Nhập hàng</span>
       <div class="nav-item active" data-page="import" onclick="showPage('import')"><span class="nav-icon">📥</span>Nhập hóa đơn mới</div>
+      <div class="nav-item" data-page="lookup" onclick="showPage('lookup')"><span class="nav-icon">🔍</span>Tra cứu mã hóa đơn</div>
       <div class="nav-item" data-page="records" onclick="showPage('records')"><span class="nav-icon">📋</span>Lịch sử phiếu nhập<span class="nav-badge" id="record-count">0</span></div>
     </div>
     <div class="nav-section">
@@ -104,7 +105,7 @@
               <span class="text-sm font-bold text-[var(--accent2)] flex items-center gap-1.5">
                 <span>🔍</span> Tra cứu từ Nhà Cung Cấp Hóa Đơn
               </span>
-              <span class="text-xs text-[var(--text3)]">Thông tư 78</span>
+              <button class="btn btn-ghost btn-xs text-xs text-[var(--accent2)]" onclick="showPage('lookup')">Mở module tra cứu riêng ➔</button>
             </div>
             <div class="text-xs text-[var(--text3)] mb-3" id="lookup-provider-guide">
               Chọn đơn vị cung cấp hóa đơn (VNPT, Viettel, MISA, BKAV...) và nhập mã tra cứu để tải trực tiếp.
@@ -214,6 +215,74 @@
         </table>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- PAGE: LOOKUP INVOICE (MODULE TRA CỨU MÃ HÓA ĐƠN RIÊNG) -->
+<div id="page-lookup" class="page">
+  <div class="topbar">
+    <div class="topbar-left">
+      <button class="menu-btn" onclick="openSidebar()">☰</button>
+      <div><div class="page-title">🔍 Tra cứu mã hóa đơn</div><div class="page-sub">Tra cứu và tải hóa đơn từ 14 nhà cung cấp HĐĐT Việt Nam</div></div>
+    </div>
+    <div class="topbar-actions">
+      <button class="theme-toggle" onclick="toggleTheme()" id="theme-btn-lookup"><span class="toggle-icon" id="theme-icon9">🌙</span></button>
+      <button class="btn btn-primary btn-sm" onclick="showPage('import')">📥 Về phiếu nhập</button>
+    </div>
+  </div>
+  <div class="content">
+
+    <!-- Card 1: Form tra cứu chính -->
+    <div class="card">
+      <div class="card-title">🔍 Nhập mã hóa đơn cần tra cứu</div>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
+        <div class="form-group">
+          <label class="form-label">Đơn vị cung cấp hóa đơn điện tử *</label>
+          <select class="form-select" id="lookup-page-provider" onchange="onLookupProviderChange()"></select>
+        </div>
+
+        <div class="form-group" id="lookup-page-mst-group" style="display:none">
+          <label class="form-label">Mã số thuế bên bán (MST)</label>
+          <input type="text" class="form-input" id="lookup-page-mst" placeholder="Nhập MST công ty xuất hóa đơn...">
+        </div>
+      </div>
+
+      <div class="form-group mb-3">
+        <label class="form-label">Mã tra cứu hóa đơn / Số hóa đơn / Ký hiệu - Số / Fkey / URL *</label>
+        <input type="text" class="form-input text-mono" id="lookup-page-code" placeholder="VD: 1C25TBA-1241 hoặc mã bí mật tra cứu...">
+      </div>
+
+      <div class="info-box mb-4" id="lookup-page-guide">
+        Chọn nhà cung cấp và nhập mã tra cứu in trên hóa đơn để tự động nạp vào app.
+      </div>
+
+      <div class="flex gap-3 flex-wrap">
+        <button type="button" class="btn btn-primary" onclick="executeLookupAndLoad()">
+          📥 Tải vào app để nhập hàng
+        </button>
+        <button type="button" class="btn btn-outline" onclick="openCurrentProviderUrl()">
+          🌐 Mở cổng tra cứu chính thức của NCC
+        </button>
+      </div>
+    </div>
+
+    <!-- Card 2: Lịch sử tra cứu gần đây -->
+    <div class="card">
+      <div class="flex items-center justify-between mb-3">
+        <div class="card-title" style="margin:0">🕒 Các mã đã tra cứu gần đây</div>
+        <button class="btn btn-ghost btn-xs text-xs text-[var(--red2)]" onclick="clearLookupHistory()">🗑 Xóa lịch sử tra cứu</button>
+      </div>
+      <div id="lookup-history-list" class="space-y-2"></div>
+    </div>
+
+    <!-- Card 3: Danh sách 14 nhà cung cấp hóa đơn điện tử lớn nhất Việt Nam -->
+    <div class="card">
+      <div class="card-title">🏢 14 Đơn vị cung cấp hóa đơn điện tử tại Việt Nam (Bấm để chọn nhanh)</div>
+      <p style="color:var(--text3);font-size:13px;margin-bottom:14px">Nhấp chọn bất kỳ nhà cung cấp nào bên dưới để nạp mẫu tra cứu:</p>
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3" id="provider-cards-grid"></div>
+    </div>
+
   </div>
 </div>
 

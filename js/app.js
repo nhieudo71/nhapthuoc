@@ -14,6 +14,9 @@ function showPage(p) {
     renderRecords();
     renderStats();
   }
+  if (p === 'lookup') {
+    renderLookupPage();
+  }
   if (p === 'pricelist') {
     renderPriceList();
   }
