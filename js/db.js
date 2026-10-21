@@ -62,7 +62,7 @@ async function ensureDb() {
   return await openIndexedDB();
 }
 
-// Đọc dữ liệu từ IndexedDB
+// Đọc dữ liệu đơn lẻ từ IndexedDB
 function idbGetItem(key) {
   return new Promise(async (resolve) => {
     const db = await ensureDb();
@@ -83,7 +83,7 @@ function idbGetItem(key) {
   });
 }
 
-// Ghi dữ liệu vào IndexedDB — Lắng nghe tx.oncomplete để đảm bảo dữ liệu ghi 100% xuống đĩa
+// Ghi dữ liệu đơn lẻ vào IndexedDB — Lắng nghe tx.oncomplete để đảm bảo dữ liệu ghi 100% xuống đĩa
 function idbSetItem(key, value) {
   return new Promise(async (resolve) => {
     const db = await ensureDb();
@@ -95,7 +95,6 @@ function idbSetItem(key, value) {
       const tx = db.transaction([IDB_STORE], 'readwrite');
       const store = tx.objectStore(IDB_STORE);
 
-      // Quan trọng: Chỉ resolve khi transaction đã COMMIT THÀNH CÔNG xuống ổ đĩa
       tx.oncomplete = () => {
         resolve(true);
       };
@@ -114,6 +113,113 @@ function idbSetItem(key, value) {
       resolve(false);
     }
   });
+}
+
+// ======================== GIẢI PHÁP CHUYÊN DỤNG CHO DƯỢC QUỐC GIA (CHUNKED STORAGE) ========================
+// Lưu 52.000 thuốc chia thành các gói nhỏ (mỗi gói 2.000 thuốc) để LevelDB không bị nghẽn/vượt hạn mức single-object
+const NAT_CHUNK_SIZE = 2000;
+
+async function idbSaveNationalChunked(nationalArray) {
+  const db = await ensureDb();
+  if (!db) return false;
+
+  const total = nationalArray.length;
+  const numChunks = Math.ceil(total / NAT_CHUNK_SIZE);
+
+  try {
+    // 1. Lưu metadata: số lượng phần và tổng số bản ghi
+    await idbSetItem('national_meta', {
+      total,
+      numChunks,
+      updatedAt: new Date().toISOString()
+    });
+
+    // 2. Lưu từng chunk vào IndexedDB trong các transaction độc lập để giải phóng RAM ngay lập tức
+    for (let c = 0; c < numChunks; c++) {
+      const start = c * NAT_CHUNK_SIZE;
+      const end = Math.min(start + NAT_CHUNK_SIZE, total);
+      const chunkData = nationalArray.slice(start, end);
+      const chunkKey = `nat_chunk_${c}`;
+
+      await new Promise((resolve, reject) => {
+        const tx = db.transaction([IDB_STORE], 'readwrite');
+        const store = tx.objectStore(IDB_STORE);
+        tx.oncomplete = () => resolve(true);
+        tx.onerror = () => reject(tx.error);
+        tx.onabort = () => reject(tx.error);
+        store.put(chunkData, chunkKey);
+      });
+      // Nhả event loop để UI không bị đơ
+      await new Promise(r => setTimeout(r, 0));
+    }
+
+    // 3. Xóa các chunk cũ thừa (nếu lần lưu trước có nhiều chunk hơn)
+    let extra = numChunks;
+    while (true) {
+      const extraKey = `nat_chunk_${extra}`;
+      const existing = await idbGetItem(extraKey);
+      if (existing === undefined) break;
+      await idbDeleteItem(extraKey);
+      extra++;
+    }
+
+    console.log(`✅ Đã lưu ${total.toLocaleString('vi-VN')} thuốc quốc gia thành công thành ${numChunks} gói độc lập vào IndexedDB!`);
+    return true;
+  } catch (err) {
+    console.error('Lỗi khi lưu national theo chunks:', err);
+    return false;
+  }
+}
+
+// Nạp lại toàn bộ 52.000 thuốc từ các chunk
+async function idbLoadNationalChunked() {
+  const db = await ensureDb();
+  if (!db) return null;
+
+  try {
+    // Kiểm tra metadata
+    const meta = await idbGetItem('national_meta');
+    if (meta && meta.numChunks > 0) {
+      const result = [];
+      for (let c = 0; c < meta.numChunks; c++) {
+        const chunkData = await idbGetItem(`nat_chunk_${c}`);
+        if (Array.isArray(chunkData)) {
+          for (let i = 0; i < chunkData.length; i++) {
+            result.push(chunkData[i]);
+          }
+        }
+      }
+      if (result.length > 0) {
+        console.log(`✅ Đã nạp thành công ${result.length.toLocaleString('vi-VN')} thuốc DQG từ ${meta.numChunks} gói Chunk IndexedDB!`);
+        return result;
+      }
+    }
+
+    // Dự phòng: Nếu là dữ liệu phiên bản cũ chưa chunk
+    const legacy = await idbGetItem('national');
+    if (Array.isArray(legacy) && legacy.length > 0) {
+      // Tự động chuyển đổi sang dạng chunk cho các lần sau
+      idbSaveNationalChunked(legacy).catch(() => {});
+      return legacy;
+    }
+
+    return null;
+  } catch (err) {
+    console.error('Lỗi khi đọc national theo chunks:', err);
+    return null;
+  }
+}
+
+// Xóa toàn bộ dữ liệu DQG
+async function idbClearNational() {
+  const meta = await idbGetItem('national_meta');
+  if (meta && meta.numChunks > 0) {
+    for (let c = 0; c < meta.numChunks; c++) {
+      await idbDeleteItem(`nat_chunk_${c}`);
+    }
+  }
+  await idbDeleteItem('national_meta');
+  await idbDeleteItem('national');
 }
 
 // Xóa dữ liệu trong IndexedDB
@@ -180,16 +286,22 @@ const DB = {
     // 1. Cập nhật ngay vào RAM Cache để UI dùng lập tức
     memoryCache[k] = v;
 
-    // 2. Dự phòng ghi vào LocalStorage (chỉ các mục nhỏ, không ghi national 52.000 dòng để tránh tràn 5MB)
+    // 2. Dự phòng ghi vào LocalStorage (chỉ các mục nhỏ, TUYỆT ĐỐI không ghi national 52.000 dòng để tránh tràn 5MB)
     if (k !== 'national') {
       try {
         localStorage.setItem('pi_' + k, JSON.stringify(v));
       } catch (lsErr) {}
     }
 
-    // 3. Ghi bền vững vào IndexedDB (lắng nghe tx.oncomplete)
-    const success = await idbSetItem(k, v);
-    return success;
+    // 3. Ghi bền vững vào IndexedDB
+    if (k === 'national') {
+      // Dùng giải pháp Chunked Storage tối ưu cho 52.000 thuốc
+      const success = await idbSaveNationalChunked(v);
+      return success;
+    } else {
+      const success = await idbSetItem(k, v);
+      return success;
+    }
   },
 
   // Nạp toàn bộ dữ liệu từ IndexedDB lúc mở app / refresh trang
@@ -198,15 +310,22 @@ const DB = {
 
     DB.readyPromise = (async () => {
       await ensureDb();
-      const keys = ['catalog', 'national', 'suppliers', 'records', 'settings', 'apikey', 'pricelist', 'lookup_history'];
+
+      // 1. Nạp danh mục Dược Quốc Gia theo cơ chế Chunked Storage
+      const natLoaded = await idbLoadNationalChunked();
+      if (Array.isArray(natLoaded) && natLoaded.length > 0) {
+        national = natLoaded;
+        memoryCache['national'] = natLoaded;
+      }
+
+      // 2. Nạp các khóa dữ liệu còn lại
+      const keys = ['catalog', 'suppliers', 'records', 'settings', 'apikey', 'pricelist', 'lookup_history'];
       
       for (const k of keys) {
         const idbVal = await idbGetItem(k);
         if (idbVal !== undefined && idbVal !== null) {
-          // Nạp dữ liệu từ IndexedDB vào RAM Cache và các biến toàn cục
           memoryCache[k] = idbVal;
           if (k === 'catalog') catalog = idbVal;
-          if (k === 'national') national = idbVal;
           if (k === 'suppliers') suppliers = idbVal;
           if (k === 'records') records = idbVal;
           if (k === 'pricelist') priceList = idbVal;
@@ -220,7 +339,6 @@ const DB = {
               const parsed = JSON.parse(lsItem);
               memoryCache[k] = parsed;
               if (k === 'catalog') catalog = parsed;
-              if (k === 'national') national = parsed;
               if (k === 'suppliers') suppliers = parsed;
               if (k === 'records') records = parsed;
               if (k === 'pricelist') priceList = parsed;
@@ -262,7 +380,7 @@ const DB = {
         renderStats();
       }
 
-      console.log(`✅ IndexedDB đã sẵn sàng! Đã nạp ${national.length} thuốc DQG, ${records.length} phiếu nhập, ${priceList.length} giá thuốc.`);
+      console.log(`✅ IndexedDB đã sẵn sàng! Đã nạp ${national.length.toLocaleString('vi-VN')} thuốc DQG, ${records.length} phiếu nhập, ${priceList.length} giá thuốc.`);
       return true;
     })();
 

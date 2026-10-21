@@ -162,11 +162,14 @@ async function importNational(input) {
   input.value = '';
 }
 
-function clearNational() {
+async function clearNational() {
   if (!confirm('Xóa toàn bộ danh mục dược quốc gia?')) return;
   national = [];
   natPage = 0;
-  DB.set('national', national);
+  if (typeof idbClearNational === 'function') {
+    await idbClearNational();
+  }
+  await DB.set('national', national);
   renderNational();
   toast('Đã xóa danh mục DQG', 'info');
 }
