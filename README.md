@@ -9,7 +9,7 @@
 1. **Đọc hóa đơn đa định dạng thông minh:**
    - **Excel (.xls, .xlsx, .csv):** Tự động nhận diện cột Tên hàng, Số lô, HSD, Số lượng, Đơn giá, VAT, Chiết khấu.
    - **Ảnh & PDF (Gemini AI + OCR Tesseract.js):** Nhận diện hóa đơn quét/chụp bằng AI hoặc OCR cục bộ chạy ngay trong trình duyệt mà không cần mạng.
-   - **XML Hóa Đơn Điện Tử (Thông tư 78):** Đọc trực tiếp file XML gốc của VNPT, Viettel, MISA, BKAV... với độ chính xác 100%.
+   - **XML Hóa Đơn Điện Tử (Thông tư 78):** Đọc trực tiếp file XML gốc của VNPT, Viettel, MISA, BKAV, CyberBill, EasyInvoice, Thái Sơn... Tự động bóc tách chuẩn xác 100% Số lô (Batch/Lot) và Hạn dùng (Expiry) qua 4 tầng: thẻ XML trực tiếp, thẻ mở rộng `TTKhac`, thẻ ghi chú `GChu` và bóc tách từ tên sản phẩm.
 
 2. **Module riêng Tra cứu & Tải mã hóa đơn:**
    - Được thiết kế thành tab riêng biệt trên thanh điều hướng (**🔍 Tra cứu mã hóa đơn**).

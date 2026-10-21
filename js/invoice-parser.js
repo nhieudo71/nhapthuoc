@@ -422,6 +422,67 @@ async function parseImageInvoice(file) {
 
 // ======================== XML INVOICE PARSER (Thông tư 78 - Chuẩn TCT) ========================
 // Hỗ trợ tất cả hóa đơn điện tử XML từ VNPT, Viettel, MISA, BKAV, CyberBill, EasyInvoice, Thái Sơn...
+// Tự động bóc tách đầy đủ Số Lô (Batch/Lot) và Hạn Dùng (Expiry) từ thẻ XML, thẻ mở rộng TTKhac, ghi chú và tên hàng
+
+// Hàm bóc tách Số lô và Hạn dùng chuyên dụng từ văn bản (tên hàng, ghi chú)
+function extractLotAndExpiryFromText(text) {
+  if (!text) return { lot: '', expiry: '' };
+  let lot = '', expiry = '';
+
+  // 1. Regex bóc tách số lô
+  const lotPatterns = [
+    /(?:số\s*lô|lô\s*sx|lô\s*sản\s*xuất|lô|solo|so\s*lo|lo\s*sx|lo|batch(?:\s*no)?|lot(?:\s*no|\s*num)?|lsx)[\s:._#\-]+([A-Za-z0-9\-_./]+)/i,
+    /\b(?:Lô|Lo)\s*[:\s#\-]*([A-Za-z0-9\-_./]+)/i
+  ];
+  for (const re of lotPatterns) {
+    const m = text.match(re);
+    if (m && m[1]) {
+      const candidate = m[1].replace(/[,;)]+$/, '').trim();
+      if (!/^(hsd|hạn|hd|date|exp)/i.test(candidate)) {
+        lot = candidate;
+        break;
+      }
+    }
+  }
+
+  // 2. Regex bóc tách hạn dùng
+  const expPatterns = [
+    /(?:hạn\s*dùng|hạn\s*sd|hsd|ngày\s*hh|ngày\s*hết\s*hạn|han\s*dung|han\s*sd|ngay\s*hh|exp(?:iry)?(?:\s*date)?|date)[\s:._#\-]+(\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4}|\d{1,2}[\/\-\.]\d{4}|\d{4}[\/\-\.]\d{1,2}[\/\-\.]\d{1,2})/i,
+    /\b(?:HSD|HD|EXP)[:\s#\-]*(\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4}|\d{1,2}[\/\-\.]\d{4}|\d{4}[\/\-\.]\d{1,2}[\/\-\.]\d{1,2})/i
+  ];
+  for (const re of expPatterns) {
+    const m = text.match(re);
+    if (m && m[1]) {
+      expiry = m[1].replace(/[,;)]+$/, '').trim();
+      break;
+    }
+  }
+
+  return { lot, expiry: cleanExpiryFormat(expiry) };
+}
+
+// Chuẩn hóa định dạng hạn dùng về dd/mm/yyyy
+function cleanExpiryFormat(s) {
+  if (!s) return '';
+  const str = String(s).trim();
+  // yyyy-mm-dd hoặc yyyy/mm/dd
+  let m = str.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/);
+  if (m) return `${m[3].padStart(2, '0')}/${m[2].padStart(2, '0')}/${m[1]}`;
+  // dd/mm/yyyy hoặc dd-mm-yyyy
+  m = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
+  if (m) {
+    const y = m[3].length === 2 ? '20' + m[3] : m[3];
+    return `${m[1].padStart(2, '0')}/${m[2].padStart(2, '0')}/${y}`;
+  }
+  // mm/yyyy hoặc mm-yyyy
+  m = str.match(/^(\d{1,2})[\/\-](\d{4})/);
+  if (m) return `${m[1].padStart(2, '0')}/${m[2]}`;
+  // yyyymmdd (8 số)
+  m = str.match(/^(\d{4})(\d{2})(\d{2})$/);
+  if (m) return `${m[3]}/${m[2]}/${m[1]}`;
+  return str;
+}
+
 async function parseXmlInvoice(file) {
   setProgress(30, 'Đọc cấu trúc XML hóa đơn điện tử...');
   const text = await file.text();
@@ -470,19 +531,45 @@ async function parseXmlInvoice(file) {
     let vatStr = node.querySelector('TSuat, VATRate')?.textContent?.trim() || '5';
     let vat = parseFloat(vatStr.replace('%', '')) || 0;
 
-    // Số lô và hạn dùng nếu có trong các thẻ mở rộng
-    let lot = node.querySelector('SoLo, LotNumber, BatchNumber')?.textContent?.trim() || '';
-    let expiry = node.querySelector('HanDung, ExpiryDate')?.textContent?.trim() || '';
-    
-    // Nếu chưa có lô / date trong thẻ riêng, thử tìm trong tên
-    if (!lot) {
-      const lotM = name.match(/[Ll]ô[:\s]+([A-Za-z0-9\-]+)/i);
-      if (lotM) lot = lotM[1];
+    // ================== BÓC TÁCH SỐ LÔ & HẠN DÙNG TOÀN DIỆN ==================
+    // Bước A: Tìm trong các thẻ XML trực tiếp của dòng hàng
+    let lot = node.querySelector('SoLo, Solo, SOLO, LoSX, Losx, LOSX, Lo, LO, BatchNumber, LotNumber, LotNo, Lot, SoLoSX, BatchNo, MaLo, Batch, SerialNumber, SerialNo')?.textContent?.trim() || '';
+    let expiry = node.querySelector('HanDung, Handung, HANDUNG, HSD, Hsd, ExpiryDate, ExpDate, ExpireDate, HanSD, NgayHH, NgayHetHan, HanSuDung, Expire, ExpirationDate, DateExpired, DueDate')?.textContent?.trim() || '';
+
+    // Bước B: Tìm trong các thẻ mở rộng TTKhac / TTin / CustomField của ngành dược
+    if (!lot || !expiry) {
+      const extraNodes = node.querySelectorAll('TTin, Field, CustomField, Attribute, Property');
+      extraNodes.forEach(extra => {
+        const fieldName = normalize(extra.querySelector('TTruong, Name, Key, Code')?.textContent || '');
+        const fieldValue = extra.querySelector('DLieu, Value, Val, Text')?.textContent?.trim() || '';
+        if (fieldValue) {
+          if (!lot && (fieldName.includes('solo') || fieldName.includes('losx') || fieldName === 'lo' || fieldName.includes('batch') || fieldName.includes('lot') || fieldName.includes('malo'))) {
+            lot = fieldValue;
+          }
+          if (!expiry && (fieldName.includes('handung') || fieldName.includes('hsd') || fieldName.includes('ngayhh') || fieldName.includes('exp') || fieldName.includes('hansd') || fieldName.includes('hethan'))) {
+            expiry = fieldValue;
+          }
+        }
+      });
     }
-    if (!expiry) {
-      const expM = name.match(/(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/);
-      if (expM) expiry = expM[1];
+
+    // Bước C: Tìm trong thẻ ghi chú dòng hàng (GChu, Note, Remark, GhiChu)
+    const noteText = node.querySelector('GChu, Note, GhiChu, Remark, Description')?.textContent?.trim() || '';
+    if ((!lot || !expiry) && noteText) {
+      const extractedFromNote = extractLotAndExpiryFromText(noteText);
+      if (!lot && extractedFromNote.lot) lot = extractedFromNote.lot;
+      if (!expiry && extractedFromNote.expiry) expiry = extractedFromNote.expiry;
     }
+
+    // Bước D: Tìm trong chính tên hàng hóa (ví dụ: "Panadol Extra (Lô: 240112 - HSD: 12/2026)")
+    if (!lot || !expiry) {
+      const extractedFromName = extractLotAndExpiryFromText(name);
+      if (!lot && extractedFromName.lot) lot = extractedFromName.lot;
+      if (!expiry && extractedFromName.expiry) expiry = extractedFromName.expiry;
+    }
+
+    // Chuẩn hóa định dạng ngày hạn dùng về dd/mm/yyyy
+    expiry = cleanExpiryFormat(expiry);
 
     const matched = findDrug(name);
     items.push({
@@ -504,7 +591,7 @@ async function parseXmlInvoice(file) {
   setTimeout(() => {
     showProgress(false);
     initImportView(items, { invoiceNumber, invoiceDate, supplierName: sellerName, supplierTax: sellerTax });
-    toast(`Đã đọc ${items.length} thuốc từ file XML hóa đơn điện tử chuẩn TCT!`, 'success');
+    toast(`Đã đọc ${items.length} thuốc từ file XML (đầy đủ Số lô & Hạn dùng)!`, 'success');
   }, 300);
 }
 
